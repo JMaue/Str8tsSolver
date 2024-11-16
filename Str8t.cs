@@ -11,18 +11,13 @@ namespace Str8tsSolver
     private static readonly char[] _delims = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', '#'];
 
     internal readonly char[,] _board;
-    internal Cell[,] _grid;
-    
+    internal Cell[,] _grid;   
     public List<Str8t> Str8ts { get; private set; }
-    private Board(char[,] board)
+
+    public Board(char[,] board)
     {
       _board = board;
       Str8ts = new List<Str8t>();
-    }
-
-    public static Board Create(char[,] board)
-    {
-      return new Board(board);
     }
 
     public Board Clone()
@@ -117,7 +112,6 @@ namespace Str8tsSolver
       (int x, int y) = str8t.CellPos(pos);
       _board[x, y] = val;
     }
-
     internal void UpdateCells(Str8t str8t, string val)
     {
       for (int pos = 0; pos < val.Length; pos++)
@@ -126,7 +120,7 @@ namespace Str8tsSolver
       }
     }
 
-    public char GetValue(int x, int y)
+    private char GetValue(int x, int y)
     {
       var v = _board[x, y];
       if (Cell.ValidCells.Contains(v))
@@ -137,25 +131,23 @@ namespace Str8tsSolver
       return ' ';
     }
 
-    internal bool IsValid()
+    public bool IsValid()
     {
       bool isValid = true;
       for (int x = 0; x < 9; x++)
       {
-        var tmp = Enumerable.Range(0, 9).Select(y => GetValue(x, y)).ToList();
-        var t = Cell.ValidCells.All(c => tmp.Count(c1 => c1 == c) <= 1);
-        isValid &= t;
+        var cellValues = Enumerable.Range(0, 9).Select(y => GetValue(x, y)).ToList();
+        isValid = isValid && Cell.ValidCells.All(c => cellValues.Count(c1 => c1 == c) <= 1);
       }
       if (!isValid)
         return false;
 
       for (int y = 0; y < 9; y++)
       {
-        var tmp = Enumerable.Range(0, 9).Select(x => GetValue(x, y)).ToList();
-        var t = Cell.ValidCells.All(c => tmp.Count(c1 => c1 == c) <= 1);
-        isValid &= t;
-      }     
-      
+        var cellValues = Enumerable.Range(0, 9).Select(x => GetValue(x, y)).ToList();
+        isValid = isValid && Cell.ValidCells.All(c => cellValues.Count(c1 => c1 == c) <= 1);
+      }
+
       return isValid;
     }
 
@@ -190,10 +182,7 @@ namespace Str8tsSolver
     public int Len => _y.Count;
     public int StartPos => _y.Min();
     public int EndPos => _y.Min() + Len;
-    public void Append(int y)
-    {
-      _y.Add(y);
-    }
+    public void Append(int y) => _y.Add(y);
     public List<Cell> Members { get; set; }
     public abstract (int, int) CellPos(int pos);
 
@@ -201,7 +190,7 @@ namespace Str8tsSolver
 
     public abstract List<Str8t> PerpendicularStr8ts();
 
-    public abstract bool Contains(int x, int y);
+    public bool Contains(int x, int y) => x == _x && _y.Contains(y);
 
     public static bool IsValid(string val)
     {
@@ -241,8 +230,6 @@ namespace Str8tsSolver
 
     public override string Cells => string.Join("", _y.Select(c => _board._board[_x, c]));
     public override List<Str8t> PerpendicularStr8ts() => Members.Where(m=>m.Vertical != null).Select(m=>m.Vertical).ToList();
-
-    public override bool Contains(int x, int y) => x == _x && _y.Contains(y);  
   }
 
   public class VStr8t : Str8t
@@ -253,7 +240,6 @@ namespace Str8tsSolver
     public override string ToString() => $"V{_x}:{Cells}";
     public override string Cells => string.Join("", _y.Select(c => _board._board[c, _x]));
 
-    public override bool Contains(int x, int y) => x == _x && _y.Contains(y);
     public override List<Str8t> PerpendicularStr8ts() => Members.Where(m=>m.Horizontal != null).Select(m => m.Horizontal).ToList();
   }
 
