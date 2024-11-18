@@ -1,6 +1,6 @@
 ﻿namespace Str8tsSolver
 {
-  internal class PermuteOptions : IAlgorithm
+  internal class ExcludeNakedPairs : IAlgorithm
   {
     public bool IsValid(Board board, Str8t str8t, string val)
     {
@@ -22,7 +22,6 @@
         List<int> pos = Enumerable.Range(0, str8t.Len).Where(i => str8t.Cells[i] == ' ').Select(x=>x).ToList();
         var options = Cell.ValidCells.ToList();
         options.RemoveAll(str8t.Cells.Contains);
-        options.RemoveAll(str8t.GetValuesInRowOrCol().Contains); 
 
         var candidates = new List<char[]>();
         foreach (var o in Permutations.Permute (options.ToArray(), 0, pos.Count))
@@ -32,7 +31,7 @@
           {
             nextTry = ReplaceFirst(nextTry, ' ', o[i]);
           }
-          if (Str8t.IsValid(nextTry) && str8t.IsValidInRowOrColumn(nextTry) && IsValid(board, str8t, nextTry))
+          if (Str8t.IsValid(nextTry) && IsValid(board, str8t, nextTry))
           {
             candidates.Add(o);
             //ccess = true;
@@ -47,10 +46,11 @@
           {
             candidates4Cells[i] = new List<int>();
             candidates.ForEach(o => candidates4Cells[i].Add(o[i]));
+            str8t.Members[i].Candidates = candidates4Cells[i];
             var emptyCells = str8t.Cells;
             idxOfCell = emptyCells.IndexOf(' ', idxOfCell);
-            var cell = str8t.Members[idxOfCell++];
-            cell.UpdateCandidates(candidates4Cells[i]);
+            var cell = str8t.Members[idxOfCell];
+            cell.Candidates = candidates4Cells[i];
 
             var firstValue = candidates[0][i];
             bool allSame = candidates.All(o => o[i] == firstValue);

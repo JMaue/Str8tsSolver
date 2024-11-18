@@ -88,7 +88,7 @@ namespace Str8tsSolver
       {
         for (int y = 0; y < 9; y++)
         {
-          _grid[x, y] = new Cell { Col = x, Row = y };
+          _grid[x, y] = new Cell (x, y, (r, c) => _board[r, c]);
           var horizontal = hStr8ts.FirstOrDefault(s => s.Contains(x, y));
           var vertical = vStr8ts.FirstOrDefault(s => s.Contains(y, x));
           _grid[x, y].Horizontal = horizontal;
@@ -219,12 +219,13 @@ namespace Str8tsSolver
 
     public List<char> GetNakedPairs ()
     {
+      var noOfEmptyCells = Cells.Count(c => c == ' ');
       var nakedPairs = new List<char>();
       for (int i=0; i<Members.Count; i++)
       {
         for (int j=i+1; j<Members.Count; j++)
         {
-          if (Members[i].Candidates.Count == Members[j].Candidates.Count)
+          if (Members[i].Candidates.Count == Members[j].Candidates.Count && Members[i].Candidates.Count <= noOfEmptyCells)
           {
             if (Members[i].Candidates.All(Members[j].Candidates.Contains))
             {
@@ -238,6 +239,14 @@ namespace Str8tsSolver
     }
 
     public abstract List<char> GetValuesInRowOrCol();
+
+    public bool IsValidInRowOrColumn(string val)
+    {
+      var invalds = GetValuesInRowOrCol();
+      var chars = val.ToCharArray();
+
+      return !chars.Any(c => invalds.Contains(c) && !Cells.Contains(c));
+    }
 
     internal void ChangeBoard(Board b)
     {
@@ -309,9 +318,33 @@ namespace Str8tsSolver
     public int Col { get; set; }
     public int Row { get; set; }
 
+    private Func<int, int, char> _getChar;
+
+
+
+    public Cell (int r, int c, Func<int, int, char> ch)
+    {
+      Row = r;
+      Col = c;
+      _getChar = ch;
+    }
+
+    public char Value => _getChar(Row, Col);
+
     public Str8t? Horizontal { get; set; }
     public Str8t? Vertical { get; set; }
 
     public List<int> Candidates = new List<int>();
+
+    internal void UpdateCandidates(List<int> list)
+    {
+      if (Candidates.Count == 0 && Value == ' ')
+      {
+        Candidates.AddRange(list.Distinct());
+        return;
+      }
+
+      Candidates.RemoveAll(c => !list.Contains(c));
+    }
   }
 }
