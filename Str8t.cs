@@ -111,6 +111,7 @@ namespace Str8tsSolver
     {
       (int x, int y) = str8t.CellPos(pos);
       _board[x, y] = val;
+      _grid[x, y].Candidates.Clear();
     }
     internal void UpdateCells(Str8t str8t, string val)
     {
@@ -170,7 +171,7 @@ namespace Str8tsSolver
   public abstract class Str8t
   {
     internal Board _board;
-    protected readonly int _x;
+    public readonly int _x;
     protected readonly List<int> _y;
     protected Str8t(int x, int y, Board board)
     {
@@ -215,7 +216,29 @@ namespace Str8tsSolver
     }
 
     public bool IsSolved() => Cells.Count(c => c == ' ') == 0;
-    
+
+    public List<char> GetNakedPairs ()
+    {
+      var nakedPairs = new List<char>();
+      for (int i=0; i<Members.Count; i++)
+      {
+        for (int j=i+1; j<Members.Count; j++)
+        {
+          if (Members[i].Candidates.Count == Members[j].Candidates.Count)
+          {
+            if (Members[i].Candidates.All(Members[j].Candidates.Contains))
+            {
+              nakedPairs.AddRange(Members[i].Candidates.Select (c => (char)c));
+            }
+          }
+        }
+      }
+
+      return nakedPairs;
+    }
+
+    public abstract List<char> GetValuesInRowOrCol();
+
     internal void ChangeBoard(Board b)
     {
       _board = b;
@@ -230,6 +253,24 @@ namespace Str8tsSolver
 
     public override string Cells => string.Join("", _y.Select(c => _board._board[_x, c]));
     public override List<Str8t> PerpendicularStr8ts() => Members.Where(m=>m.Vertical != null).Select(m=>m.Vertical).ToList();
+
+    public override List<char> GetValuesInRowOrCol()
+    {
+      var rc = Enumerable.Range(0, 9)
+        .Where(i => _board._board[_x, i] >= '1' && _board._board[_x, i] <= '9')
+        .Select(i =>_board._board[_x, i]).ToList();
+
+      rc.AddRange(Enumerable.Range(0, 9)
+        .Where(i => _board._board[_x, i] >= 'A' && _board._board[_x, i] <= 'I')
+        .Select(i => (char)(_board._board[_x, i] - 'A' + '1')));
+
+      foreach (var s in _board.Str8ts.Where(s => s is HStr8t && _x == s._x))
+      {
+        if (s != this)
+          rc.AddRange(s.GetNakedPairs());
+      }
+      return rc;
+    }
   }
 
   public class VStr8t : Str8t
@@ -241,6 +282,24 @@ namespace Str8tsSolver
     public override string Cells => string.Join("", _y.Select(c => _board._board[c, _x]));
 
     public override List<Str8t> PerpendicularStr8ts() => Members.Where(m=>m.Horizontal != null).Select(m => m.Horizontal).ToList();
+
+    public override List<char> GetValuesInRowOrCol()
+    {
+      var rc = Enumerable.Range(0, 9)
+       .Where(i => _board._board[i, _x] >= '1' && _board._board[i, _x] <= '9')
+       .Select(i => _board._board[i, _x]).ToList();
+
+      rc.AddRange(Enumerable.Range(0, 9)
+        .Where(i => _board._board[i, _x] >= 'A' && _board._board[i, _x] <= 'I')
+        .Select(i => (char)(_board._board[i, _x] - 'A' + '1')));
+
+      foreach (var s in _board.Str8ts.Where(s => s is VStr8t && _x == s._x))
+      {
+        if (s != this)
+          rc.AddRange(s.GetNakedPairs());
+      }
+      return rc;
+    }
   }
 
   public class Cell
@@ -252,5 +311,7 @@ namespace Str8tsSolver
 
     public Str8t? Horizontal { get; set; }
     public Str8t? Vertical { get; set; }
+
+    public List<int> Candidates = new List<int>();
   }
 }

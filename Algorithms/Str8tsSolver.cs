@@ -20,7 +20,8 @@ namespace Str8tsSolver
       var algorithms = new List<IAlgorithm>
       {
         //new SingleGapInStr8t(),
-        new PermuteOptions()
+        new PermuteOptions(),
+        //new ExcludeNakedPairs()
       };
       bool progress;
       do

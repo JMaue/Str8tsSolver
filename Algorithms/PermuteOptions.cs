@@ -22,6 +22,7 @@
         List<int> pos = Enumerable.Range(0, str8t.Len).Where(i => str8t.Cells[i] == ' ').Select(x=>x).ToList();
         var options = Cell.ValidCells.ToList();
         options.RemoveAll(str8t.Cells.Contains);
+        options.RemoveAll(str8t.GetValuesInRowOrCol().Contains); 
 
         var candidates = new List<char[]>();
         foreach (var o in Permutations.Permute (options.ToArray(), 0, pos.Count))
@@ -39,8 +40,18 @@
         }
         if (candidates.Count > 0)
         {
+          // list of candidates per cell
+          List<int>[] candidates4Cells = new List<int>[cnt];
+          int idxOfCell = 0;
           for (int i = 0; i < cnt; i++)
           {
+            candidates4Cells[i] = new List<int>();
+            candidates.ForEach(o => candidates4Cells[i].Add(o[i]));
+            var emptyCells = str8t.Cells;
+            idxOfCell = emptyCells.IndexOf(' ', idxOfCell);
+            var cell = str8t.Members[idxOfCell++];
+            cell.Candidates = candidates4Cells[i];
+
             var firstValue = candidates[0][i];
             bool allSame = candidates.All(o => o[i] == firstValue);
             if (allSame)
