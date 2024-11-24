@@ -166,6 +166,42 @@ namespace Str8tsSolver
       }
       Console.WriteLine();
     }
+
+    public void PrintBoard(bool big = true)
+    {    
+      for (int x = 0; x < 9; x++)
+      {
+        Console.WriteLine(" ----- ----- ----- ----- ----- ----- ----- ----- ----- ");
+        for (int r = 0; r < 3; r++)
+        {
+          Console.Write('|');
+          for (int y = 0; y < 9; y++)
+          {
+            var c = _grid[x, y].Presentation;
+            if (_grid[x, y].IsBlack)
+            {
+              Console.ForegroundColor = ConsoleColor.Black;
+              Console.BackgroundColor = ConsoleColor.White;
+            }
+            else
+            {
+              Console.ForegroundColor = ConsoleColor.White;
+              Console.BackgroundColor = ConsoleColor.Black;
+            }
+            Console.Write(' ');
+            for (int i = 0; i < 3; i++)
+              Console.Write(c[r, i]);
+            Console.Write(' ');
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.Write('|');
+          }
+         Console.WriteLine();
+        }
+      }
+      Console.WriteLine(" ----- ----- ----- ----- ----- ----- ----- ----- ----- ");
+      Console.WriteLine();
+    }
   }
 
   public abstract class Str8t
@@ -252,6 +288,37 @@ namespace Str8tsSolver
     {
       _board = b;
     }
+
+    public abstract Str8t GetPerpendicularStr8t(Cell m);
+
+    public List<char> CertainCells ()
+    {
+      // permutate candidates
+      var options = new List<List<char>>();
+      for (int i=0; i<Members.Count; i++)
+      {
+        if (Members[i].Value != ' ')
+          options.Add(new List<char> { Members[i].Value });
+        else if (Members[i].Candidates.Count > 0)
+          options.Add(Members[i].Candidates.Select(c => (char)c).ToList());
+      }
+      var candidates = new List<char[]>();
+      foreach (var o in Permutations.Permute(options))
+      {
+        var nextTry = Cells;
+        for (int i = 0; i < o.Length; i++)
+        {
+          nextTry = Str8tsSolver.ReplaceFirst(nextTry, ' ', o[i]);
+        }
+        if (IsValid(nextTry))
+        {
+          candidates.Add(o);
+        }
+      }
+
+      // find intersection of all options o: o[i] == o[j] for all i,j
+      return Str8tsSolver.FindIntersection(candidates);
+    }
   }
 
   public class HStr8t : Str8t
@@ -280,6 +347,8 @@ namespace Str8tsSolver
       }
       return rc;
     }
+
+    public override Str8t GetPerpendicularStr8t(Cell c) => c.Vertical;
   }
 
   public class VStr8t : Str8t
@@ -309,6 +378,8 @@ namespace Str8tsSolver
       }
       return rc;
     }
+
+    public override Str8t GetPerpendicularStr8t(Cell c) => c.Horizontal;
   }
 
   public class Cell
@@ -320,7 +391,35 @@ namespace Str8tsSolver
 
     private Func<int, int, char> _getChar;
 
+    public char[,] Presentation { get
+      {
+        var rc = new char[3, 3]
+        {
+          { ' ', ' ', ' ' },
+          { ' ', ' ', ' ' },
+          { ' ', ' ', ' ' }
+        };
+        var c = Value;
+        if (ValidCells.Contains(c))
+          rc[1, 1] = c;
+        else if (BlackCells.Contains(c))
+          rc[1, 1] = (char)(c - 'A' + '1');
+        else
+        {
+          if (Candidates.Any())
+          {
+            for (int i = 1; i <= 9; i++)
+            {
+              if (Candidates.Contains((char)(i + '0')))
+                rc[(i-1) / 3, (i-1) % 3] = '*';
+            }
+          }
+        }
+        return rc;
+      } 
+    }
 
+    public bool IsBlack => Value == '#' || BlackCells.Contains(Value);
 
     public Cell (int r, int c, Func<int, int, char> ch)
     {

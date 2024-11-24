@@ -1,6 +1,8 @@
-﻿namespace Str8tsSolver
+﻿using System.Linq;
+
+namespace Str8tsSolver
 {
-  internal class PermuteOptions : IAlgorithm
+  internal class PermuteCandidates : IAlgorithm
   {
     public bool IsValid(Board board, Str8t str8t, string val)
     {
@@ -20,17 +22,27 @@
       if (cnt > 0)
       {
         List<int> pos = Enumerable.Range(0, str8t.Len).Where(i => str8t.Cells[i] == ' ').Select(x=>x).ToList();
-        var options = Cell.ValidCells.ToList();
-        options.RemoveAll(str8t.Cells.Contains);
-        options.RemoveAll(str8t.GetValuesInRowOrCol().Contains); 
+        var options = new List<List<char>>();
+        foreach (var m in str8t.Members.Where(c => c.Value == ' '))
+        {
+          var c = m.Candidates.Select(c => (char)c).ToList();
+          var perp = str8t.GetPerpendicularStr8t(m);
+          if (perp != null)
+          {
+            //c.RemoveAll(o => perp.Cells.Contains(o));
+            var certainCells = perp.CertainCells();
+            c.RemoveAll(certainCells.Contains);
+          }
+          options.Add(c);
+        }
 
         var candidates = new List<char[]>();
-        foreach (var o in Permutations.Permute (options.ToArray(), 0, pos.Count))
+        foreach (var o in Permutations.Permute (options))
         {
           var nextTry = str8t.Cells;
           for (int i = 0; i < cnt; i++)
           {
-            nextTry = ReplaceFirst(nextTry, ' ', o[i]);
+            nextTry = Str8tsSolver.ReplaceFirst(nextTry, ' ', o[i]);
           }
           if (Str8t.IsValid(nextTry) && str8t.IsValidInRowOrColumn(nextTry) && IsValid(board, str8t, nextTry))
           {
@@ -63,16 +75,6 @@
       }
 
       return success;
-    }
-
-    public static string ReplaceFirst(string text, char search, char replace)
-    {
-      int pos = text.IndexOf(search);
-      if (pos < 0)
-      {
-        return text;
-      }
-      return text.Substring(0, pos) + replace + text.Substring(pos + 1);
     }
   }
 
