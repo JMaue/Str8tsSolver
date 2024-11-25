@@ -26,11 +26,12 @@ namespace Str8tsSolver
         foreach (var m in str8t.Members.Where(c => c.Value == ' '))
         {
           var c = m.Candidates.Select(c => (char)c).ToList();
-          var perp = str8t.GetPerpendicularStr8t(m);
-          if (perp != null)
+          var perp = str8t.GetPerpendicularStr8ts(m);
+          if (perp.Any())
           {
             //c.RemoveAll(o => perp.Cells.Contains(o));
-            var certainCells = perp.CertainCells();
+            var certainCells = new List<char>();
+            perp.ForEach(p=>certainCells.AddRange(p.CertainCellsByIntersection()));
             c.RemoveAll(certainCells.Contains);
           }
           options.Add(c);
