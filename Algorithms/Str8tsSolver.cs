@@ -59,10 +59,14 @@ namespace Str8tsSolver
             if (!str8t.IsSolved())
             {
               progress |= alg.Solve(board, str8t);
+              Console.WriteLine($"Algorithm {alg.GetType().Name} finished. Str8t:{str8t}");
+              //board.PrintBoard(true);
+              //Console.ReadLine();
             }
           }
-          Console.WriteLine($"Algorithm {alg.GetType().Name} finished");
-          board.PrintBoard(true);
+          Console.WriteLine($"Algorithm {alg.GetType().Name} finished. Progress:{progress}");
+          //if (iterations >= 1)
+          //  board.PrintBoard(true);
         }
 
         if (progress)

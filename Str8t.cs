@@ -28,6 +28,7 @@ namespace Str8tsSolver
     public abstract List<Str8t> PerpendicularStr8ts();
 
     public bool Contains(int x, int y) => x == _x && _y.Contains(y);
+    public bool Contains(Cell c) => Members.Contains(c);
 
     public static bool IsValid(string val)
     {
@@ -122,11 +123,32 @@ namespace Str8tsSolver
 
     public List<char> CertainCellsBySize ()
     {
-      if (Len == 4 && Members[2].Value == '2' && IsHorizontal && _x == 2)
+      var rc = new List<char>();
+      var options = new List<int>();
+      Members.ForEach(m => options.AddRange(m.Candidates));
+      options = options.Distinct().ToList();
+      var solved = new List<int> ();
+      Members.Where(m => m.Value != ' ').ToList().ForEach(x => solved.Add(x.Value));
+      options.AddRange(solved);
+      if (!options.Any())
+        return new List<char>();
+
+      var min = options.Min();
+      var max = options.Max();
+      if (max - min + 1 == Len)
+        return Enumerable.Range(min, max - min + 1).Select(i => (char)(i)).ToList();
+
+      if (Enumerable.Range(min, max - min+1).Any(i => options.Contains(i) == false))
+        return new List<char>();
+
+      var certain = new List<char[]>();
+      for (var s=min; s<=max-Len+1; s++)
       {
-        return new List<char> { '1', '2', '3', '4' };
+        var attempt = Enumerable.Range(s, Len).Select(i => (char)(i)).ToList();
+        if (solved.All(x => attempt.Contains((char)(x))))
+          certain.Add(attempt.ToArray());
       }
-      return new List<char>();
+      return Str8tsSolver.FindIntersection(certain);
     }
 
     public List<char> CertainCells()
@@ -145,7 +167,12 @@ namespace Str8tsSolver
   {
     public HStr8t(int r, int c, Board b) : base(r, c, b) { }
     public override (int, int) CellPos(int pos) => (_x, _y[pos]);
-    public override string ToString() => $"H{_x}:{Cells}";
+    public override string ToString()
+    {
+      var cells = string.Join("", _y.Select(c => _board._board[_x, c] == ' ' ? '.' : _board._board[_x,c]));
+      var pos = $"{_x}:{string.Join("-", _y)}";
+      return $"H{pos}:{cells}";
+    }
 
     public override bool IsHorizontal => true;
     public override bool IsVertical => false;
@@ -189,7 +216,12 @@ namespace Str8tsSolver
     public VStr8t(int r, int c, Board b) : base(r, c, b) { }
 
     public override (int, int) CellPos(int pos) => (_y[pos], _x);
-    public override string ToString() => $"V{_x}:{Cells}";
+    public override string ToString()
+    {
+      var cells = string.Join("", _y.Select(c => _board._board[c, _x] == ' ' ? '.' : _board._board[c, _x]));
+      var pos = $"{_x}:{string.Join("-", _y)}";
+      return $"V{pos}:{cells}";
+    }
     public override string Cells => string.Join("", _y.Select(c => _board._board[c, _x]));
     public override List<Str8t> PerpendicularStr8ts() => Members.Where(m => m.Horizontal != null).Select(m => m.Horizontal).ToList();
     public override bool IsHorizontal => false;

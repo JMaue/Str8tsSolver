@@ -31,7 +31,7 @@ namespace Str8tsSolver
           {
             //c.RemoveAll(o => perp.Cells.Contains(o));
             var certainCells = new List<char>();
-            perp.ForEach(p=>certainCells.AddRange(p.CertainCellsByIntersection()));
+            perp.ForEach(p=>certainCells.AddRange(p.Contains(m) ? p.GetNakedPairs() : p.CertainCells()));
             c.RemoveAll(certainCells.Contains);
           }
           options.Add(c);
