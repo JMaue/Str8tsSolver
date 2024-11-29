@@ -1,4 +1,4 @@
-﻿namespace Str8tsSolver
+﻿namespace Str8tsSolverLib
 {
   internal class SingleGapInStr8t : IAlgorithm
   {

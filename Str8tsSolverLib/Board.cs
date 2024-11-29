@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Str8tsSolver
+namespace Str8tsSolverLib
 {
   public class Board
   {
@@ -34,7 +34,7 @@ namespace Str8tsSolver
       }
 
       var clone = new Board(b);
-      clone.ReadStr8ts();
+      clone.ReadBoard();
       return clone;
     }
 
@@ -76,7 +76,7 @@ namespace Str8tsSolver
       }
     }
 
-    public void ReadStr8ts()
+    public void ReadBoard()
     {
       var hStr8ts = ReadHorizontalStr8ts(_board);
       var vStr8ts = ReadVerticalStr8ts(_board);
@@ -96,10 +96,12 @@ namespace Str8tsSolver
         var row = Rows.FirstOrDefault(r => r.Idx == s._x && r.IsHorizontal == s.IsHorizontal);
         if (row == null)
         {
-          row = s.IsHorizontal ? new HRow(s._x) : new HRow(s._x);
+          row = s.IsHorizontal ? new HRow(s._x) : new VRow(s._x);
           Rows.Add(row);
         }
         row.AddStr8t(s);
+        s.SetRow(row);
+        row.SetCells(this);
       }
     }
 

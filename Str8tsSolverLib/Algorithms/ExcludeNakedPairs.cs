@@ -1,8 +1,6 @@
-﻿using System.Linq;
-
-namespace Str8tsSolver
+﻿namespace Str8tsSolverLib
 {
-  internal class PermuteCandidates : IAlgorithm
+  internal class ExcludeNakedPairs : IAlgorithm
   {
     public bool IsValid(Board board, Str8t str8t, string val)
     {
@@ -22,32 +20,21 @@ namespace Str8tsSolver
       if (cnt > 0)
       {
         List<int> pos = Enumerable.Range(0, str8t.Len).Where(i => str8t.Cells[i] == ' ').Select(x=>x).ToList();
-        var options = new List<List<char>>();
-        foreach (var m in str8t.Members.Where(c => c.Value == ' '))
-        {
-          var c = m.Candidates.Select(c => (char)c).ToList();
-          var perp = str8t.GetPerpendicularStr8ts(m);
-          if (perp.Any())
-          {
-            //c.RemoveAll(o => perp.Cells.Contains(o));
-            var certainCells = new List<char>();
-            perp.ForEach(p=>certainCells.AddRange(p.Contains(m) ? p.GetNakedPairs() : p.CertainCells()));
-            c.RemoveAll(certainCells.Contains);
-          }
-          options.Add(c);
-        }
+        var options = Cell.ValidCells.ToList();
+        options.RemoveAll(str8t.Cells.Contains);
 
         var candidates = new List<char[]>();
-        foreach (var o in Permutations.Permute (options))
+        foreach (var o in Permutations.Permute (options.ToArray(), 0, pos.Count))
         {
           var nextTry = str8t.Cells;
           for (int i = 0; i < cnt; i++)
           {
-            nextTry = Str8tsSolver.ReplaceFirst(nextTry, ' ', o[i]);
+            nextTry = ReplaceFirst(nextTry, ' ', o[i]);
           }
-          if (Str8t.IsValid(nextTry) && str8t.IsValidInRowOrColumn(nextTry) && IsValid(board, str8t, nextTry))
+          if (Str8t.IsValid(nextTry) && IsValid(board, str8t, nextTry))
           {
             candidates.Add(o);
+            //ccess = true;
           }
         }
         if (candidates.Count > 0)
@@ -59,10 +46,11 @@ namespace Str8tsSolver
           {
             candidates4Cells[i] = new List<int>();
             candidates.ForEach(o => candidates4Cells[i].Add(o[i]));
+            str8t.Members[i].Candidates = candidates4Cells[i];
             var emptyCells = str8t.Cells;
             idxOfCell = emptyCells.IndexOf(' ', idxOfCell);
-            var cell = str8t.Members[idxOfCell++];
-            cell.UpdateCandidates(candidates4Cells[i]);
+            var cell = str8t.Members[idxOfCell];
+            cell.Candidates = candidates4Cells[i];
 
             var firstValue = candidates[0][i];
             bool allSame = candidates.All(o => o[i] == firstValue);
@@ -76,6 +64,16 @@ namespace Str8tsSolver
       }
 
       return success;
+    }
+
+    public static string ReplaceFirst(string text, char search, char replace)
+    {
+      int pos = text.IndexOf(search);
+      if (pos < 0)
+      {
+        return text;
+      }
+      return text.Substring(0, pos) + replace + text.Substring(pos + 1);
     }
   }
 

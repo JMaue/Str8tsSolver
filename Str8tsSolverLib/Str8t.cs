@@ -4,13 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Str8tsSolver
+namespace Str8tsSolverLib
 {
   public abstract class Str8t
   {
     internal Board _board;
     public readonly int _x;
     protected readonly List<int> _y;
+    public void SetRow(Row r) => _row = r;
+    protected Row _row;
+
     protected Str8t(int x, int y, Board board)
     {
       _x = x;
@@ -57,7 +60,7 @@ namespace Str8tsSolver
     public List<char> GetNakedPairs ()
     {
       var noOfEmptyCells = Cells.Count(c => c == ' ');
-      var nakedPairs = new List<char>();
+      var nakedPairs = new Dictionary<string, int>();
       for (int i=0; i<Members.Count; i++)
       {
         for (int j=i+1; j<Members.Count; j++)
@@ -66,16 +69,38 @@ namespace Str8tsSolver
           {
             if (Members[i].Candidates.All(Members[j].Candidates.Contains))
             {
-              nakedPairs.AddRange(Members[i].Candidates.Select (c => (char)c));
+              var key = string.Join("", Members[i].Candidates.Select(c => (char)c));
+              if (nakedPairs.ContainsKey(key))
+                nakedPairs[key]++;
+              else
+                nakedPairs[key] = 1;
             }
           }
         }
       }
-
-      return nakedPairs;
+     
+      foreach (var np in nakedPairs)
+      {
+        if (np.Key.Length == np.Value)
+          return np.Key.ToCharArray().ToList();
+      }
+      return new List<char>();
     }
 
-    public abstract List<char> GetValuesInRowOrCol();
+    public List<char> GetValuesInRowOrCol()
+    {
+      var rc = _row.GetDecidedValues();
+
+      foreach (var s in _board.Str8ts.Where(s => s is VStr8t && _x == s._x))
+      {
+        if (s != this)
+        {
+          rc.AddRange(s.GetNakedPairs());
+          rc.AddRange(s.CertainCells());
+        }
+      }
+      return rc;
+    }
 
     public bool IsValidInRowOrColumn(string val)
     {
@@ -180,31 +205,10 @@ namespace Str8tsSolver
     public override string Cells => string.Join("", _y.Select(c => _board._board[_x, c]));
     public override List<Str8t> PerpendicularStr8ts() => Members.Where(m => m.Vertical != null).Select(m => m.Vertical).ToList();
 
-    public override List<char> GetValuesInRowOrCol()
-    {
-      var rc = Enumerable.Range(0, 9)
-        .Where(i => _board._board[_x, i] >= '1' && _board._board[_x, i] <= '9')
-        .Select(i =>_board._board[_x, i]).ToList();
-
-      rc.AddRange(Enumerable.Range(0, 9)
-        .Where(i => _board._board[_x, i] >= 'A' && _board._board[_x, i] <= 'I')
-        .Select(i => (char)(_board._board[_x, i] - 'A' + '1')));
-
-      foreach (var s in _board.Str8ts.Where(s => s is HStr8t && _x == s._x))
-      {
-        if (s != this)
-        {
-          rc.AddRange(s.GetNakedPairs());
-          rc.AddRange(s.CertainCells());
-        }
-      }
-      return rc;
-    }
-
     public override List<Str8t> GetPerpendicularStr8ts(Cell c)
     {
       var str8ts = new List<Str8t>();
-      var row = _board.Rows.Where(r => r.IsVertical && r.Idx == c.Row).FirstOrDefault();
+      var row = _board.Rows.Where(r => r.IsVertical && r.Idx == c.Col).FirstOrDefault();
       if (row != null)
         str8ts.AddRange(row.Str8ts);
       return str8ts;
@@ -226,27 +230,7 @@ namespace Str8tsSolver
     public override List<Str8t> PerpendicularStr8ts() => Members.Where(m => m.Horizontal != null).Select(m => m.Horizontal).ToList();
     public override bool IsHorizontal => false;
     public override bool IsVertical => true;
-
-    public override List<char> GetValuesInRowOrCol()
-    {
-      var rc = Enumerable.Range(0, 9)
-       .Where(i => _board._board[i, _x] >= '1' && _board._board[i, _x] <= '9')
-       .Select(i => _board._board[i, _x]).ToList();
-
-      rc.AddRange(Enumerable.Range(0, 9)
-        .Where(i => _board._board[i, _x] >= 'A' && _board._board[i, _x] <= 'I')
-        .Select(i => (char)(_board._board[i, _x] - 'A' + '1')));
-
-      foreach (var s in _board.Str8ts.Where(s => s is VStr8t && _x == s._x))
-      {
-        if (s != this)
-        {
-          rc.AddRange(s.GetNakedPairs());
-          rc.AddRange(s.CertainCells());
-        }
-      }
-      return rc;
-    }
+   
     public override List<Str8t> GetPerpendicularStr8ts(Cell c)
     {
       var str8ts = new List<Str8t>();

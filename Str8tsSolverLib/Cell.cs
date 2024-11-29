@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Str8tsSolver
+namespace Str8tsSolverLib
 {
   public class Cell
   {
@@ -28,6 +28,8 @@ namespace Str8tsSolver
         var c = Value;
         if (ValidCells.Contains(c))
           rc[1, 1] = c;
+        else if (c == '#')
+          rc[1, 1] = 'X';
         else if (BlackCells.Contains(c))
           rc[1, 1] = (char)(c - 'A' + '1');
         else

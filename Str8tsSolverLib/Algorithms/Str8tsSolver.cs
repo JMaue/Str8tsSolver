@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Str8tsSolver
+namespace Str8tsSolverLib
 {
   interface IAlgorithm
   {
@@ -52,7 +52,8 @@ namespace Str8tsSolver
       do
       {
         progress = false;
-        foreach (var alg in algorithms)
+        //foreach (var alg in algorithms)
+        var alg = iterations == 0 ? algorithms[0] : algorithms[1];
         {
           foreach (var str8t in board.Str8ts)
           {
@@ -61,21 +62,22 @@ namespace Str8tsSolver
               progress |= alg.Solve(board, str8t);
               Console.WriteLine($"Algorithm {alg.GetType().Name} finished. Str8t:{str8t}");
               //board.PrintBoard(true);
-              //Console.ReadLine();
+              //if (iterations > 1)
+               // Console.ReadLine();
             }
           }
-          Console.WriteLine($"Algorithm {alg.GetType().Name} finished. Progress:{progress}");
+          Console.WriteLine($"Algorithm {alg.GetType().Name} finished. Iterations:{iterations}, Progress:{progress}");
           //if (iterations >= 1)
-          //  board.PrintBoard(true);
+            board.PrintBoard(true);
         }
 
-        if (progress)
-        {
-          board.PrintBoard(true);
-          iterations++;
-        }
+        //if (progress)
+        //{
+        //  board.PrintBoard(true);
+        //}
+        iterations++;
 
-      } while (progress);
+      } while (progress || iterations == 1);
 
       return board.IsSolved && board.IsValid();
     }

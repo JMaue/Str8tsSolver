@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Str8tsSolver
+namespace Str8tsSolverLib
 {
   public static class Permutations
   {
