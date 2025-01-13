@@ -22,6 +22,10 @@ namespace Str8tsSolverLib
       Rows = new List<Row>();
     }
 
+    // Definiere den Delegate
+    public delegate void PositionSolvedHandler(int x, int y, char newValue);
+    public event PositionSolvedHandler PositionSolved;
+
     public Board Clone()
     {
       var b = new char[9, 9];
@@ -130,12 +134,16 @@ namespace Str8tsSolverLib
     {
       (int x, int y) = str8t.CellPos(pos);
       _board[x, y] = (char)(val + '0');
+      if (PositionSolved != null)
+        PositionSolved(x, y, _board[x, y]);
     }
 
     internal void UpdateCell(Str8t str8t, int pos, char val)
     {
       (int x, int y) = str8t.CellPos(pos);
       _board[x, y] = val;
+      if (PositionSolved != null)
+        PositionSolved(x, y, _board[x, y]);
       _grid[x, y].Candidates.Clear();
     }
     internal void UpdateCells(Str8t str8t, string val)

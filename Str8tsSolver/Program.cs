@@ -1,52 +1,48 @@
 ﻿namespace Str8tsSolver
 {
+  using Str8tsSolverImageTools;
   using Str8tsSolverLib;
+  using System;
+
   internal class Program
-  {
+  { 
     static void Main(string[] args)
     {
       Console.WriteLine("Str8ts Solver");
 
       char[,] b = new char[,]
-      { // easy
-        { 'E', '#', '8', ' ', ' ', '#', '#', '3', ' ' },
-        { ' ', '7', '9', '#', 'B', ' ', ' ', '4', ' ' },
-        { ' ', ' ', '#', '3', ' ', ' ', '2', ' ', '6' },
-        { '#', ' ', ' ', ' ', '8', ' ', 'D', ' ', ' ' },
-        { '#', 'F', '4', ' ', '#', ' ', ' ', 'A', '#' },
-        { ' ', '1', 'C', '4', ' ', ' ', ' ', ' ', '#' },
-        { ' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ' },
-        { '4', ' ', '1', ' ', '#', '#', '6', ' ', ' ' },
-        { ' ', ' ', '#', '#', ' ', ' ', ' ', 'I', 'G' },
+      { // hard
+        { ' ', ' ', 'G', ' ', ' ', '#', ' ', ' ', '#' },
+        { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' },
+        { '#', '8', ' ', '#', ' ', ' ', 'E', ' ', '1' },
+        { ' ', ' ', '#', ' ', ' ', '#', ' ', ' ', '#' },
+        { ' ', 'I', ' ', ' ', ' ', ' ', ' ', '#', ' ' },
+        { 'C', ' ', ' ', '#', ' ', ' ', '#', ' ', '9' },
+        { ' ', ' ', '#', ' ', ' ', 'F', ' ', ' ', '#' },
+        { ' ', '2', ' ', ' ', ' ', '7', ' ', ' ', '5' },
+        { '#', ' ', '4', 'A', ' ', ' ', '#', ' ', ' ' },
       };
 
-      //var test = new List<List<char>>();
-      //test.Add(new List<char> { 'A', 'B' });
-      //test.Add(new List<char> { '1' });
-      //test.Add(new List<char> { 'C', 'D', 'E' });
-      //test.Add(new List<char> { 'X', 'Y' });
+      string imagePath1 = @"D:\Jens\Repositories\Str8tsSolver\Data\20241129_222948.jpg";
+      string imagePath2 = @"D:\Jens\Repositories\Str8tsSolver\Data\20241223_160209.jpg";
+      string imagePath3 = @"D:\Jens\Repositories\Str8tsSolver\Data\20241225_18=16.jpg";
+      string imagePath4 = @"D:\Jens\Repositories\Str8tsSolver\Data\ex1.png";
+      string imagePath5 = @"D:\Jens\Repositories\Str8tsSolver\Data\20241229_101829.jpg";
+      string imagePath6 = @"D:\Jens\Repositories\Str8tsSolver\Data\20241229_095738.jpg";
+      string imagePath7 = @"D:\Jens\Repositories\Str8tsSolver\Data\ex3.png";
+      string imagePath8 = @"D:\Jens\Repositories\Str8tsSolver\Data\ex4.png";
+      string imagePath9 = @"D:\Jens\Repositories\Str8tsSolver\Data\ex5.png";
+      string imagePath10 = @"D:\Jens\Repositories\Str8tsSolver\Data\ex6.jpg";
+      string imagePath11 = @"D:\Jens\Repositories\Str8tsSolver\Data\20250107_071128.jpg";
+      string imagePath12 = @"D:\Jens\Repositories\Str8tsSolver\Data\20250106_1916";
+      string imagePath13 = @"D:\Jens\Repositories\Str8tsSolver\Data\2024-01-12.png";
 
-      //foreach (var x in Permutations.Permute(test))
-      //  Console.WriteLine(string.Join("", x));
-      //Console.ReadLine();
-
-      var board = new Board (b);
+      var bf = new BoardFinder();
+      var grid = bf.ReadBoardFromImage(imagePath13);
+      var board = new Board (grid);
       board.ReadBoard();
       board.PrintBoard(true);
-
-      //var str = new HStr8t(2, 3, board);
-      //str.Append(4);
-      //str.Append(5);
-      //str.Append(6);
-      //str.Members.Add(board._grid[2, 3]);
-      //str.Members.Add(board._grid[2, 4]);
-      //str.Members.Add(board._grid[2, 5]);
-      //str.Members.Add(board._grid[2, 6]);
-      //str.Members[1].Candidates = new List<int> { 1, 3, 4, 5, 6 };
-      ////str.Members[2].Candidates = new List<int> { 1, 3, 4, 5, 6 };
-      //str.Members[3].Candidates = new List<int> { 1, 3, 4, 5, 6 };
-      //var certain = str.CertainCells();
-      //Console.WriteLine(string.Join("", certain));
+      board.PositionSolved += (x, y, newValue) => Console.WriteLine($"Position {x},{y} solved with {newValue}");
 
       var solved = Str8tsSolver.Solve(board, out int iterations);
       var msg = solved ? "Solved" : "Not solved";
