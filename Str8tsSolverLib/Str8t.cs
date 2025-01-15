@@ -98,6 +98,13 @@ namespace Str8tsSolverLib
       var invalds = GetValuesInRowOrCol();
       var chars = val.ToCharArray();
 
+      // test if this would remove all candidates from a cell
+      var cellPositions = Enumerable.Range(StartPos, Len);
+      // consider all cells but the ones in this Str8t
+      var cellsToConsider = Enumerable.Range(0, 9).Where(i => !cellPositions.Contains(i)).ToList(); 
+      if (_row.WouldEraseCandidates(chars, cellsToConsider))
+        return false;
+
       return !chars.Any(c => invalds.Contains(c) && !Cells.Contains(c));
     }
 

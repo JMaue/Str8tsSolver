@@ -158,7 +158,8 @@ namespace Str8tsSolverImageTools
 
                   foreach (var point in approxContour.ToArray())
                   {
-                    if (ShowImg) CvInvoke.Circle(img, point, 15, new MCvScalar(0, 255, 0), 5);
+                    var d = imgY > 1000 ? 15 : 5;
+                    if (ShowImg) CvInvoke.Circle(img, point, d, new MCvScalar(0, 255, 0), 5);
                     rc.Add(point);
                   }
                 }
@@ -247,6 +248,8 @@ namespace Str8tsSolverImageTools
           var bottomLeft = new Point(bl.X + c * dxb, bl.Y + c * dyb);
           var bottomRight = new Point(bl.X + (c + 1) * dxb, bl.Y + (c + 1) * dyb);
 
+          ySize = bottomLeft.Y - topLeft.Y;
+
           //CvInvoke.Circle(image, bottomLeft, 15, new MCvScalar(0, 255, 0), 5);
 
           //if (ShowImg)
@@ -277,7 +280,10 @@ namespace Str8tsSolverImageTools
               board[r, c] = (char)('A' + digit - 1);
             else
               board[r, c] = (char)('0' + digit);
-            CvInvoke.PutText(image, $"{digit}", bottomLeft, FontFace.HersheyPlain, 4, new MCvScalar(0, 255, 0), 4);
+
+            var fontScale = ySize > 100 ? 10 : 3;
+            var thickness = ySize > 100 ? 10 : 4;
+            CvInvoke.PutText(image, $"{digit}", bottomLeft, FontFace.HersheyPlain, fontScale, new MCvScalar(0, 255, 0), thickness);
           }
           else
             if (black)
@@ -285,7 +291,6 @@ namespace Str8tsSolverImageTools
           else
             board[r, c] = ' ';
 
-          ySize = bottomLeft.Y - topLeft.Y;
           _points[r, c] = bottomLeft;
           //CvInvoke.PutText(image, $"{agv}", bottomLeft, FontFace.HersheyPlain, 4, new MCvScalar(0, 255, 0), 4);
         }
@@ -327,7 +332,7 @@ namespace Str8tsSolverImageTools
 
         Mat imgThresholded = new Mat();
         var binThreshold = black || isScreenShot ? 150 : 180;
-        CvInvoke.Threshold(graySmooth, imgThresholded, 150, 255, ThresholdType.Binary);
+        CvInvoke.Threshold(graySmooth, imgThresholded, binThreshold, 255, ThresholdType.Binary);
         img4Ocr = imgThresholded;
         //img4Ocr = graySmooth.Mat;
       }

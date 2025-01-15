@@ -35,6 +35,19 @@ namespace Str8tsSolverLib
                  .Select(i => (char)(_cells[i].Value - 'A' + '1')));
       return rc;
     }
+
+    public bool WouldEraseCandidates(char[] values, List<int> positions)
+    {
+      foreach (int i in positions)
+      {
+        if (_cells[i].Value == ' ')
+        {
+          if (_cells[i].WouldEraseCandidates(values))
+            return true;
+        }
+      }
+      return false;
+    }
   }
 
   public class HRow : Row

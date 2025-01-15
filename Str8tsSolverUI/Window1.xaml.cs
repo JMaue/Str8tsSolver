@@ -51,7 +51,14 @@ namespace DragDropExample
 
           Task.Run(() =>
           {
-            Str8tsSolver.Solve(board, out var iterations);
+            bool isSolved = Str8tsSolver.Solve(board, out var iterations);
+            Dispatcher.Invoke(() =>
+            {
+              if (isSolved)
+                MessageBox.Show($"Solved in {iterations} iterations");
+              else
+                MessageBox.Show("Not solved");
+            });
           }); 
         }
       }

@@ -73,5 +73,16 @@ namespace Str8tsSolverLib
 
       Candidates.RemoveAll(c => !list.Contains(c));
     }
+
+    internal bool WouldEraseCandidates(char[] values)
+    {
+      if (Value != ' ')
+        return false;
+
+      if (Candidates.Count == 0)
+        return false;
+
+      return Candidates.All(c => values.Contains((char)c));
+    }
   }
 }
