@@ -10,6 +10,13 @@ namespace Str8tsSolverImageTools
 {
   public class BoardFinder
   {
+    enum ShowIntermediateResults : Int16
+    {
+      LabelCorner = 1,
+      CornerCycle = 2,
+      DrawAllContours = 4,
+    }
+
     Tesseract _ocr = new();
 
     Point[,] _points = new Point[9, 9];
@@ -17,13 +24,14 @@ namespace Str8tsSolverImageTools
     MCvScalar black = new MCvScalar(0, 0, 0);
 
     Mat _originalImage;
+    List<Point> _contour;
 
     public BoardFinder()
     {
       InitOcr(Tesseract.DefaultTesseractDirectory, "eng", OcrEngineMode.TesseractOnly);
     }
 
-    public bool ShowImg { get; set; } = false;
+    public Int16 ShowIntermediates { get; set; } = 0;
 
     private static void TesseractDownloadLangFile(String folder, String lang)
     {
@@ -96,7 +104,9 @@ namespace Str8tsSolverImageTools
       var contour = FindExternalContour(ref _originalImage);
       if (contour.Any())
       {
-        var isScreenShot = IsScreenShot(_originalImage, contour);
+        //return (_originalImage, new char[0,0]);
+        _contour = new List<Point>(contour);
+        var isScreenShot = IsScreenShot(contour);
         var board = Find81Fields(_originalImage, contour, isScreenShot);
 
         return (_originalImage, board);
@@ -113,7 +123,7 @@ namespace Str8tsSolverImageTools
     public List<Point> FindExternalContour(ref Mat img)
     {
       var rc = new List<Point>();
-
+      int count = 0;
       var imgX = img.Rows;
       var imgY = img.Cols;
       var minSquareSize = Math.Min(imgX, imgY) * 0.8;
@@ -123,7 +133,7 @@ namespace Str8tsSolverImageTools
       {
         CvInvoke.CvtColor(img, gray, ColorConversion.Bgr2Gray);
         var graySmooth = gray.ToImage<Gray, byte>().SmoothGaussian(5, 5, 1.5, 1.5);
-
+        //img = graySmooth.Mat;
         // Kanten mit Canny-Algorithmus erkenney(230)n
         using (Mat cannyEdges = new Mat())
         {
@@ -138,13 +148,14 @@ namespace Str8tsSolverImageTools
               using (VectorOfPoint approxContour = new VectorOfPoint())
               {
                 // Kontur approximieren
-                CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.15, true);
+                CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.10, true);
 
                 // Prüfen, ob die approximierte Kontur mindestens 80% der Bildbreite einnimmt.
                 var maxX = 0;
                 var maxY = 0;
                 var minX = imgX;
                 var minY = imgY;
+                //CvInvoke.DrawContours(img, contours, i, new MCvScalar(0, 0, 255), 2);
                 foreach (var point in approxContour.ToArray())
                 {
                   maxX = Math.Max(maxX, point.X);
@@ -154,14 +165,18 @@ namespace Str8tsSolverImageTools
                 }
                 if (maxX - minX >= minSquareSize && maxY - minY >= minSquareSize)
                 {
-                  if (ShowImg) CvInvoke.DrawContours(img, contours, i, new MCvScalar(0, 0, 255), 2);
-
+                  if ((ShowIntermediates & (Int16)ShowIntermediateResults.DrawAllContours) != 0)
+                    CvInvoke.DrawContours(img, contours, i, new MCvScalar(0, 0, 255), 2);
                   foreach (var point in approxContour.ToArray())
                   {
                     var d = imgY > 1000 ? 15 : 5;
-                    if (ShowImg) CvInvoke.Circle(img, point, d, new MCvScalar(0, 255, 0), 5);
+                    if ((ShowIntermediates & (Int16)ShowIntermediateResults.CornerCycle) != 0) 
+                      CvInvoke.Circle(img, point, d, new MCvScalar(0, 255, 0), 5);
                     rc.Add(point);
                   }
+                  count++;
+                  if (count == 1)
+                    return rc;
                 }
               }
             }
@@ -216,13 +231,13 @@ namespace Str8tsSolverImageTools
       Point lowerLeft = corners[2];
       Point lowerRight = corners[3];
 
-      //if (ShowImg)
-      //{
-      //  CvInvoke.PutText(image, "1", lowerRight, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
-      //  CvInvoke.PutText(image, "2", lowerLeft, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
-      //  CvInvoke.PutText(image, "3", upperRight, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
-      //  CvInvoke.PutText(image, "4", upperLeft, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
-      //}
+      if ((ShowIntermediates & (Int16)ShowIntermediateResults.LabelCorner) != 0)
+      {
+        CvInvoke.PutText(image, "1", lowerRight, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
+        CvInvoke.PutText(image, "2", lowerLeft, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
+        CvInvoke.PutText(image, "3", upperRight, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
+        CvInvoke.PutText(image, "4", upperLeft, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
+      }
 
       var dxr = (upperRight.X - lowerRight.X) / 9;
       var dyr = (lowerRight.Y - upperRight.Y) / 9;    // always positiv
@@ -318,11 +333,12 @@ namespace Str8tsSolverImageTools
       Mat img4Ocr = grayImage;
       DenseHistogram histogram = new DenseHistogram(256, new RangeF(0, 256));
 
+      Image<Gray, byte> graySmooth = new Image<Gray, byte>(grayImage.Size);
       if (!isScreenShot)
       {
         var increasedContrast = new Mat();
         CvInvoke.ConvertScaleAbs(grayImage, increasedContrast, 1.5, 5);
-        var graySmooth = increasedContrast.ToImage<Gray, byte>().SmoothGaussian(45, 45, 2.5, 2.5);
+        graySmooth = increasedContrast.ToImage<Gray, byte>().SmoothGaussian(45, 45, 2.5, 2.5);
 
         //DenseHistogram histogram = new DenseHistogram(256, new RangeF(0, 256));
         histogram.Calculate(new Image<Gray, byte>[] { img4Ocr.ToImage<Gray, byte>() }, false, null);
@@ -331,15 +347,29 @@ namespace Str8tsSolverImageTools
         var black = averageGrayValue < 100;
 
         Mat imgThresholded = new Mat();
-        var binThreshold = black || isScreenShot ? 150 : 180;
-        CvInvoke.Threshold(graySmooth, imgThresholded, binThreshold, 255, ThresholdType.Binary);
+        double binThreshold;
+        if (black && isScreenShot)
+          binThreshold = 150;
+        else if (black && !isScreenShot)
+          binThreshold = 150;
+        else if (!black && isScreenShot)
+          binThreshold = 150;
+        else
+          binThreshold = 180;
+
+        if (black)
+          CvInvoke.Threshold(graySmooth, imgThresholded, 0, 255, ThresholdType.Binary | ThresholdType.Otsu);
+        else
+          CvInvoke.AdaptiveThreshold(graySmooth, imgThresholded, 255, AdaptiveThresholdType.MeanC, ThresholdType.Binary, 11, 2);
+        
+        //CvInvoke.Threshold(graySmooth, imgThresholded, binThreshold, 255, ThresholdType.Binary);
         img4Ocr = imgThresholded;
         //img4Ocr = graySmooth.Mat;
       }
 
       #region Berechnung des Histogramms für das Graubild
 
-      histogram.Calculate(new Image<Gray, byte>[] { img4Ocr.ToImage<Gray, byte>() }, false, null);
+      histogram.Calculate(new Image<Gray, byte>[] { graySmooth /* img4Ocr.ToImage<Gray, byte>() */ }, false, null);
 
       // Optional: Um das Histogramm anzuzeigen
       Mat histImage = new Mat();
@@ -388,7 +418,7 @@ namespace Str8tsSolverImageTools
       return value;
     }
 
-    internal bool IsScreenShot(Mat image, List<Point> contour)
+    public bool IsScreenShot(List<Point> contour)
     {
       var corners = FindCornerPoints(contour);
       Point upperLeft = corners[0];
@@ -396,7 +426,7 @@ namespace Str8tsSolverImageTools
       Point lowerLeft = corners[2];
       Point lowerRight = corners[3];
 
-      return upperLeft.X == upperRight.X && lowerLeft.X == lowerRight.X && upperLeft.Y == lowerLeft.Y && upperRight.Y == lowerRight.Y;
+      return upperLeft.Y == upperRight.Y && lowerLeft.Y == lowerRight.Y && upperLeft.X == lowerLeft.X && upperRight.X == lowerRight.X;
     }
 
     public Mat PositionSolved(int x, int y, char newValue)
@@ -407,5 +437,21 @@ namespace Str8tsSolverImageTools
  
       return _originalImage;
     }
+
+    public Mat MarkSolved()
+    {
+      if (_contour.Count > 2)
+      {
+
+        for (int i = 0; i < _contour.Count; i++)
+        {
+          Point startPoint = _contour[i];
+          Point endPoint = _contour[(i + 1) % _contour.Count]; // Verbindet den letzten Punkt mit dem ersten Punkt
+          CvInvoke.Line(_originalImage, startPoint, endPoint, new MCvScalar(0, 255, 0), 10);
+        }
+      }
+      return _originalImage;
+    }
   }
 }
+

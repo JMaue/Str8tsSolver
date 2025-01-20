@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using Emgu.CV;
 using Str8tsSolverLib;
 using System.Threading.Tasks;
+using Emgu.CV.Reg;
 
 namespace DragDropExample
 {
@@ -41,7 +42,7 @@ namespace DragDropExample
         string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
         if (files.Length > 0)
         {
-          _boardFinder.ShowImg = true;
+          _boardFinder.ShowIntermediates = 2;
           (var image, var chars) = _boardFinder.FindBoard(files[0]);
           imageBox.Source = image.ToBitmapSource();
 
@@ -55,11 +56,14 @@ namespace DragDropExample
             Dispatcher.Invoke(() =>
             {
               if (isSolved)
-                MessageBox.Show($"Solved in {iterations} iterations");
+              {
+                var mat = _boardFinder.MarkSolved();
+                imageBox.Source = mat.ToBitmapSource();
+              }
               else
                 MessageBox.Show("Not solved");
             });
-          }); 
+          });
         }
       }
     }

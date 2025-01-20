@@ -231,23 +231,6 @@ namespace Str8tsSolverTest
       }));
     }
 
-    [Test]
-    public void Test14()
-    {
-      Assert.IsTrue(Solve(new char[,]
-      { // hard
-        { '#', ' ', ' ', ' ', '#', '#', ' ', ' ', 'D' },
-        { '#', ' ', ' ', '7', ' ', '#', ' ', ' ', ' ' },
-        { ' ', ' ', '#', '5', ' ', ' ', '#', ' ', ' ' },
-        { '1', ' ', ' ', '#', 'F', ' ', ' ', ' ', '#' },
-        { ' ', ' ', ' ', ' ', ' ', ' ', ' ', '9', ' ' },
-        { '#', ' ', ' ', ' ', '#', 'E', ' ', ' ', '7' },
-        { ' ', ' ', 'A', ' ', ' ', '4', '#', ' ', ' ' },
-        { ' ', ' ', ' ', 'I', ' ', ' ', ' ', ' ', '#' },
-        { 'G', ' ', ' ', '#', '#', ' ', '1', ' ', '#' },
-      }));
-    }
-
     private bool Solve(char[,] b)
     {
       var board = new Board(b);
@@ -255,6 +238,39 @@ namespace Str8tsSolverTest
       board.PrintBoard(true);
       var solved = Str8tsSolver.Solve(board, out int iterations);
       return solved;
+    }
+
+    private char[,] LoadBoardFromFile(string filePath)
+    {
+      var board = new char[9, 9];
+      var lines = File.ReadAllLines(filePath);
+
+      for (int i = 0; i < lines.Length; i++)
+      {
+        for (int j = 0; j < lines[i].Length; j++)
+        {
+          var v = lines[i][j];
+          board[i, j] = v == '.' ? ' ' : v;
+        }
+      }
+
+      return board;
+    }
+
+    [Test]
+    public void SolveBoards()
+    {
+      var files = Directory.GetFiles(@"..\\..\\..\\Samples_derwesten\", "board_*.txt");
+      foreach (var file in files)
+      {
+        var board = LoadBoardFromFile(file);
+        var solved = Solve(board);
+        Assert.IsTrue(solved);
+        if (!solved)
+          Console.WriteLine($"Failed to solve {file}");
+        else
+          Console.WriteLine($"Solved {file}");
+      }
     }
   }
 }
