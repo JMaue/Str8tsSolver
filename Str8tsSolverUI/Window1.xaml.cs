@@ -42,7 +42,7 @@ namespace DragDropExample
         string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
         if (files.Length > 0)
         {
-          _boardFinder.ShowIntermediates = 2;
+          _boardFinder.ShowIntermediates = (int)(ShowIntermediateResults.CornerCycle | ShowIntermediateResults.ShowGivenCells);
           (var image, var chars) = _boardFinder.FindBoard(files[0]);
           imageBox.Source = image.ToBitmapSource();
 

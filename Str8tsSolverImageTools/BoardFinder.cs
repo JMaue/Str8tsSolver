@@ -5,20 +5,24 @@ using Emgu.CV;
 using System.Drawing;
 using Emgu.CV.OCR;
 using System.Diagnostics;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Str8tsSolverImageTools
 {
+  public enum ShowIntermediateResults : Int16
+  {
+    LabelCorner = 1,
+    CornerCycle = 2,
+    DrawAllContours = 4,
+    DrawRois = 8,
+    ShowGivenCells = 16
+  }
+
   public class BoardFinder
   {
-    enum ShowIntermediateResults : Int16
-    {
-      LabelCorner = 1,
-      CornerCycle = 2,
-      DrawAllContours = 4,
-    }
-
     Tesseract _ocr = new();
 
+    // bottom left coordinates of each of the 9x9 grid cells to write the solution in the OnSolved callback
     Point[,] _points = new Point[9, 9];
     int ySize = 0;
     MCvScalar black = new MCvScalar(0, 0, 0);
@@ -104,7 +108,6 @@ namespace Str8tsSolverImageTools
       var contour = FindExternalContour(ref _originalImage);
       if (contour.Any())
       {
-        //return (_originalImage, new char[0,0]);
         _contour = new List<Point>(contour);
         var isScreenShot = IsScreenShot(contour);
         var board = Find81Fields(_originalImage, contour, isScreenShot);
@@ -223,7 +226,7 @@ namespace Str8tsSolverImageTools
       return new Point[] { upperLeft, upperRight, lowerLeft, lowerRight };
     }
 
-    public char[,] Find81Fields(Mat image, List<Point> contour, bool isScreenShot = false)
+    public char[,] Find81Fields(Mat originalImage, List<Point> contour, bool isScreenShot = false)
     {
       var corners = FindCornerPoints(contour);
       Point upperLeft = corners[0];
@@ -233,14 +236,14 @@ namespace Str8tsSolverImageTools
 
       if ((ShowIntermediates & (Int16)ShowIntermediateResults.LabelCorner) != 0)
       {
-        CvInvoke.PutText(image, "1", lowerRight, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
-        CvInvoke.PutText(image, "2", lowerLeft, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
-        CvInvoke.PutText(image, "3", upperRight, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
-        CvInvoke.PutText(image, "4", upperLeft, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
+        CvInvoke.PutText(originalImage, "1", lowerRight, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
+        CvInvoke.PutText(originalImage, "2", lowerLeft, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
+        CvInvoke.PutText(originalImage, "3", upperRight, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
+        CvInvoke.PutText(originalImage, "4", upperLeft, FontFace.HersheyPlain, 8, new MCvScalar(255, 0, 255), 4);
       }
 
       var grayImage = new Mat();
-      CvInvoke.CvtColor(image, grayImage, ColorConversion.Bgr2Gray);
+      CvInvoke.CvtColor(originalImage, grayImage, ColorConversion.Bgr2Gray);
 
       (bool[,] blackValues, int average, int avgBlack, int avgWhite) = CalcBlackWhiteMatrix (grayImage, upperLeft, upperRight, lowerLeft, lowerRight);
 
@@ -262,7 +265,7 @@ namespace Str8tsSolverImageTools
         var dyb = (br.Y - bl.Y) / 9;
         for (int c = 0; c < 9; c++)
         {
-          // Berechne die Eckpunkte des Rechtecks
+          // corner points of the ROI
           var topLeft = new Point(tl.X + c * dxt, tl.Y + c * dyt);
           var topRight = new Point(tl.X + (c + 1) * dxt, tl.Y + (c + 1) * dyt);
           var bottomLeft = new Point(bl.X + c * dxb, bl.Y + c * dyb);
@@ -270,25 +273,27 @@ namespace Str8tsSolverImageTools
 
           ySize = bottomLeft.Y - topLeft.Y;
 
-          //CvInvoke.Circle(image, bottomLeft, 15, new MCvScalar(0, 255, 0), 5);
-
-          //if (ShowImg)
-          //{
-          //  // Rechteck zeichnen
-          //  CvInvoke.Line(image, topLeft, topRight, new MCvScalar(0, 255, 0), 2);
-          //  CvInvoke.Line(image, topLeft, bottomLeft, new MCvScalar(0, 255, 0), 2);
-          //  CvInvoke.Line(image, bottomLeft, bottomRight, new MCvScalar(0, 255, 0), 2);
-          //  CvInvoke.Line(image, topRight, bottomRight, new MCvScalar(0, 255, 0), 2);
-          //}
+          if ((ShowIntermediates & (Int16)ShowIntermediateResults.DrawRois) != 0)
+          {
+            // Rechteck zeichnen
+            CvInvoke.Line(originalImage, topLeft, topRight, new MCvScalar(0, 255, 0), 2);
+            CvInvoke.Line(originalImage, topLeft, bottomLeft, new MCvScalar(0, 255, 0), 2);
+            CvInvoke.Line(originalImage, bottomLeft, bottomRight, new MCvScalar(0, 255, 0), 2);
+            CvInvoke.Line(originalImage, topRight, bottomRight, new MCvScalar(0, 255, 0), 2);
+          }
 
           // Rechteck definieren
           int shrink = Convert.ToInt16(dxt * 0.20); // take 15% off from all sides
           Rectangle rect = new Rectangle(topLeft.X + shrink, topLeft.Y + shrink, topRight.X - topLeft.X - (2 * shrink), bottomLeft.Y - topLeft.Y - (2 * shrink));
+          Mat roi = new Mat(grayImage, rect);
+          SaveRegionToFile(roi, @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}.png");
 
           var isBlack = blackValues[r, c];
-          Mat roi = new Mat(grayImage, rect);
-          var digit = isBlack ? GetDigitBlack (roi, r, c, isScreenShot) : GetDigitWhite(roi, r, c, avgWhite, isScreenShot);
-          SaveRegionToFile(roi, @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}.png");
+          board[r, c] = isBlack ? '#' : ' ';
+          var digit = isBlack 
+            ? GetDigitFromBlackCell (roi, r, c, isScreenShot) 
+            : GetDigitFromWhiteCell(roi, r, c, avgWhite, isScreenShot);
+
           if (digit >= 1 && digit <= 9)
           {
             if (isBlack)
@@ -296,16 +301,15 @@ namespace Str8tsSolverImageTools
             else
               board[r, c] = (char)('0' + digit);
 
-            var fontScale = ySize > 100 ? 10 : 3;
-            var thickness = ySize > 100 ? 10 : 4;
-            CvInvoke.PutText(image, $"{digit}", bottomLeft, FontFace.HersheyPlain, fontScale, new MCvScalar(0, 255, 0), thickness);
+            if ((ShowIntermediates & (Int16)ShowIntermediateResults.ShowGivenCells) != 0)
+            {
+              var fontScale = ySize > 100 ? 10 : 3;
+              var thickness = ySize > 100 ? 10 : 4;
+              CvInvoke.PutText(originalImage, $"{digit}", bottomLeft, FontFace.HersheyPlain, fontScale, new MCvScalar(0, 255, 0), thickness);
+            }
           }
-          else
-            if (isBlack)
-              board[r, c] = '#';
-            else
-              board[r, c] = ' ';
 
+          // keep the bottom left coordinates of each of the 9x9 grid cells to write the solution in the OnSolved callback
           _points[r, c] = bottomLeft;
         }
       }
@@ -350,7 +354,7 @@ namespace Str8tsSolverImageTools
 
             // Durchschnittlichen Grauwert berechnen
             //var grayImage = new Mat();
-            //CvInvoke.CvtColor(image, grayImage, ColorConversion.Bgr2Gray);
+            //CvInvoke.CvtColor(originalImage, grayImage, ColorConversion.Bgr2Gray);
             var average = GetAverageGrayValue(image, rect);
             processAverage(average, r, c);
           }
@@ -403,29 +407,10 @@ namespace Str8tsSolverImageTools
       return averageGrayValue;
     }
 
-    public int GetDigitWhite(Mat roi, int r, int c, int averageWhiteVal, bool isScreenShot)
+    public int GetDigitFromWhiteCell(Mat roi, int r, int c, int averageWhiteVal, bool isScreenShot)
     {
       Mat img4Ocr = roi;
-
-      #region Berechnung des Histogramms für das Graubild
-      DenseHistogram histogram = new DenseHistogram(256, new RangeF(0, 256));
-      histogram.Calculate(new Image<Gray, byte>[] { img4Ocr.ToImage<Gray, byte>() }, false, null);
-
-      // Optional: Um das Histogramm anzuzeigen
-      Mat histImage = new Mat();
-      CvInvoke.Normalize(histogram, histogram, 0, 255, NormType.MinMax);
-      histImage = new Mat(256, 256, DepthType.Cv8U, 1);
-      histImage.SetTo(new MCvScalar(255));
-      for (int i = 0; i < 256; i++)
-      {
-        int binVal = (int)histogram.GetBinValues()[i];
-        CvInvoke.Line(histImage, new Point(i, 256), new Point(i, 256 - binVal), new MCvScalar(0, 255, 0), 2);
-      }
-
-      // Speichern Sie das Histogramm-Bild als PNG-Datei
-      string filePath = @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}h.png";
-      CvInvoke.Imwrite(filePath, histImage);
-      #endregion
+      SaveHistogramImage(roi, r, c);
 
       Image<Gray, byte> graySmooth = new Image<Gray, byte>(roi.Size);
       if (!isScreenShot)
@@ -445,45 +430,22 @@ namespace Str8tsSolverImageTools
         //img4Ocr = graySmooth.Mat;
       }
 
-      var txt = ExtractDigitsFromImage(img4Ocr);
-      txt = txt.Replace("\r\n", "");
+      var digit = ExtractDigitsFromImage(img4Ocr, r, c, false);
       int val = -1;
-      if (txt.Count() <= 3)
-      {
-        var d = txt.FirstOrDefault(c => c >= '1' && c <= '9');
-        if (d > 0)
-          val = d - '0';
-      }
+      if (digit != ' ')
+        val = digit - '0';
 
-      CvInvoke.PutText(img4Ocr, $"{txt}", new Point(3, roi.Height - 3), FontFace.HersheyPlain, 4, new MCvScalar(111, 111, 111), 4);
+      CvInvoke.PutText(img4Ocr, $"{val}", new Point(3, roi.Height - 3), FontFace.HersheyPlain, 4, new MCvScalar(0, 0, 0), 4);
       SaveRegionToFile(img4Ocr, @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}c.png");
 
       return val;
     }
 
-    public int GetDigitBlack (Mat roi, int r, int c, bool isScreenShot)
+    public int GetDigitFromBlackCell (Mat roi, int r, int c, bool isScreenShot)
     {
       Mat img4Ocr = roi;
 
-      #region Berechnung des Histogramms für das Graubild
-      DenseHistogram histogram = new DenseHistogram(256, new RangeF(0, 256));
-      histogram.Calculate(new Image<Gray, byte>[] { img4Ocr.ToImage<Gray, byte>() }, false, null);
-
-      // Optional: Um das Histogramm anzuzeigen
-      Mat histImage = new Mat();
-      CvInvoke.Normalize(histogram, histogram, 0, 255, NormType.MinMax);
-      histImage = new Mat(256, 256, DepthType.Cv8U, 1);
-      histImage.SetTo(new MCvScalar(255));
-      for (int i = 0; i < 256; i++)
-      {
-        int binVal = (int)histogram.GetBinValues()[i];
-        CvInvoke.Line(histImage, new Point(i, 256), new Point(i, 256 - binVal), new MCvScalar(0, 255, 0), 2);
-      }
-
-      // Speichern Sie das Histogramm-Bild als PNG-Datei
-      string filePath = @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}h.png";
-      CvInvoke.Imwrite(filePath, histImage);
-      #endregion
+      SaveHistogramImage(roi, r, c);
 
       Image<Gray, byte> graySmooth = new Image<Gray, byte>(roi.Size);
       if (!isScreenShot)
@@ -503,20 +465,36 @@ namespace Str8tsSolverImageTools
         //img4Ocr = graySmooth.Mat;
       }
 
-      var txt = ExtractDigitsFromImage(img4Ocr);
-      txt = txt.Replace("\r\n", "");
+      var digit = ExtractDigitsFromImage(img4Ocr, r, c, true);
       int val = -1;
-      if (txt.Count() <= 3)
-      {
-        var d = txt.FirstOrDefault(c => c >= '1' && c <= '9');
-        if (d > 0)
-          val = d - '0';
-      }
+      if (digit != ' ')
+        val = digit - '0';
 
-      CvInvoke.PutText(img4Ocr, $"{txt}", new Point(3, roi.Height - 3), FontFace.HersheyPlain, 4, new MCvScalar(111, 111, 111), 4);
+      CvInvoke.PutText(img4Ocr, $"{val}", new Point(3, roi.Height - 3), FontFace.HersheyPlain, 4, new MCvScalar(222, 222, 222), 4);
       SaveRegionToFile(img4Ocr, @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}c.png");
 
       return val;
+    }
+
+    public void SaveHistogramImage(Mat img, int r, int c)
+    {
+      DenseHistogram histogram = new DenseHistogram(256, new RangeF(0, 256));
+      histogram.Calculate(new Image<Gray, byte>[] { img.ToImage<Gray, byte>() }, false, null);
+
+      // Optional: Um das Histogramm anzuzeigen
+      Mat histImage = new Mat();
+      CvInvoke.Normalize(histogram, histogram, 0, 255, NormType.MinMax);
+      histImage = new Mat(256, 256, DepthType.Cv8U, 1);
+      histImage.SetTo(new MCvScalar(255));
+      for (int i = 0; i < 256; i++)
+      {
+        int binVal = (int)histogram.GetBinValues()[i];
+        CvInvoke.Line(histImage, new Point(i, 256), new Point(i, 256 - binVal), new MCvScalar(0, 255, 0), 2);
+      }
+
+      // Speichern Sie das Histogramm-Bild als PNG-Datei
+      string filePath = @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}h.png";
+      CvInvoke.Imwrite(filePath, histImage);
     }
 
     public static void SaveRegionToFile(Mat roi, string filePath)
@@ -525,13 +503,30 @@ namespace Str8tsSolverImageTools
       CvInvoke.Imwrite(filePath, roi);
     }
 
-    private string ExtractDigitsFromImage(Mat image)
+    private char ExtractDigitsFromImage(Mat img, int r, int c, bool black)
     {
-      _ocr.SetImage(image);
+      bool Validate (Tesseract.Word word) 
+      {
+        return word.Confident > 75 && word.Text.Trim().Length == 1 && word.Region.Height > img.Height * 0.4;
+      }
+
+      _ocr.SetImage(img);
       _ocr.Recognize();
 
-      var value = _ocr.GetUTF8Text();
-      return value;
+      var words = _ocr.GetWords();
+      if (words != null)
+      {
+        var hit = words.FirstOrDefault(w => Validate (w));
+        if (!hit.Equals(null) && hit.Text != null)
+        {
+          var color = black ? new MCvScalar(222, 222, 222) : new MCvScalar(0, 0, 0);
+          CvInvoke.PutText(img, $"{(int)hit.Confident}", new Point(3, img.Height - 3), FontFace.HersheyPlain, 4, color, 4);
+          CvInvoke.Rectangle(img, hit.Region, color, 1);
+          SaveRegionToFile(img, @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}v.png");
+          return hit.Text[0];
+        }
+      }
+      return ' ';
     }
 
     public bool IsScreenShot(List<Point> contour)
