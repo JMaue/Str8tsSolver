@@ -1,27 +1,24 @@
-//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2024 by EMGU Corporation. All rights reserved.       
-//----------------------------------------------------------------------------
 using Emgu.CV;
 using Str8tsSolverImageTools;
-using System;
-using System.Linq;
 using System.Windows;
-using System.Windows.Media.Imaging;
-using Emgu.CV;
 using Str8tsSolverLib;
 using System.Threading.Tasks;
-using Emgu.CV.Reg;
+using System.Configuration;
 
-namespace DragDropExample
+namespace Str8tsSolver.WPF
 {
   public partial class MainWindow : Window
   {
+    private string _dataFolder;
+
     public MainWindow()
     {
       InitializeComponent();
+      _dataFolder = ConfigurationManager.AppSettings["DataFolder"];
+      _boardFinder = new BoardFinder(_dataFolder);
     }
 
-    private BoardFinder _boardFinder = new BoardFinder();
+    private readonly BoardFinder _boardFinder;
 
     private void Window_DragEnter(object sender, DragEventArgs e)
     {
@@ -42,8 +39,8 @@ namespace DragDropExample
         string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
         if (files.Length > 0)
         {
-          _boardFinder.ShowIntermediates = (int)(ShowIntermediateResults.CornerCycle | ShowIntermediateResults.ShowGivenCells);
-          (var image, var chars) = _boardFinder.FindBoard(files[0]);
+          _boardFinder.ShowIntermediates = (int)(ShowIntermediateResults.CornerCycle | ShowIntermediateResults.ShowOcrResults);
+          var (image, chars) = _boardFinder.FindBoard(files[0]);
           imageBox.Source = image.ToBitmapSource();
 
           var board = new Board(chars);
@@ -52,7 +49,7 @@ namespace DragDropExample
 
           Task.Run(() =>
           {
-            bool isSolved = Str8tsSolver.Solve(board, out var iterations);
+            bool isSolved = Str8tsSolverLib.Str8tsSolver.Solve(board, out var iterations);
             Dispatcher.Invoke(() =>
             {
               if (isSolved)

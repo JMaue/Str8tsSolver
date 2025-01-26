@@ -15,11 +15,14 @@ namespace Str8tsSolverImageTools
     CornerCycle = 2,
     DrawAllContours = 4,
     DrawRois = 8,
-    ShowGivenCells = 16
+    ShowGivenCells = 16,
+    ShowOcrResults = 32,
   }
 
   public class BoardFinder
   {
+    private readonly string _dataFolder;
+
     Tesseract _ocr = new();
 
     // bottom left coordinates of each of the 9x9 grid cells to write the solution in the OnSolved callback
@@ -30,8 +33,9 @@ namespace Str8tsSolverImageTools
     Mat _originalImage;
     List<Point> _contour;
 
-    public BoardFinder()
+    public BoardFinder(string dataFolder)
     {
+      _dataFolder = dataFolder;
       InitOcr(Tesseract.DefaultTesseractDirectory, "eng", OcrEngineMode.TesseractOnly);
     }
 
@@ -42,17 +46,17 @@ namespace Str8tsSolverImageTools
       //String subfolderName = "tessdata";
       //String folderName = System.IO.Path.Combine(folder, subfolderName);
       String folderName = folder;
-      if (!System.IO.Directory.Exists(folderName))
+      if (!Directory.Exists(folderName))
       {
-        System.IO.Directory.CreateDirectory(folderName);
+        Directory.CreateDirectory(folderName);
       }
-      String dest = System.IO.Path.Combine(folderName, String.Format("{0}.traineddata", lang));
-      if (!System.IO.File.Exists(dest))
+      String dest = Path.Combine(folderName, $"{lang}.traineddata");
+      if (!File.Exists(dest))
         using (System.Net.WebClient webclient = new System.Net.WebClient())
         {
-          String source = Emgu.CV.OCR.Tesseract.GetLangFileUrl(lang);
+          String source = Tesseract.GetLangFileUrl(lang);
 
-          Trace.WriteLine(String.Format("Downloading file from '{0}' to '{1}'", source, dest));
+          Trace.WriteLine($"Downloading file from '{source}' to '{dest}'");
           webclient.DownloadFile(source, dest);
           Trace.WriteLine("Download completed");
         }
@@ -72,15 +76,8 @@ namespace Str8tsSolverImageTools
         if (String.IsNullOrEmpty(path))
           path = Tesseract.DefaultTesseractDirectory;
 
-        string configFilePath = $"{path}//user_pattern.txt";
         TesseractDownloadLangFile(path, lang);
         TesseractDownloadLangFile(path, "osd"); //script orientation detection
-        /*
-        String pathFinal = path.Length == 0 || path.Substring(path.Length - 1, 1).Equals(Path.DirectorySeparatorChar.ToString())
-            ? path
-            : String.Format("{0}{1}", path, System.IO.Path.DirectorySeparatorChar);
-        */
-
 
         _ocr = new Tesseract(path, lang, mode);
         _ocr.SetVariable("tessedit_char_whitelist", "123456789");
@@ -275,24 +272,24 @@ namespace Str8tsSolverImageTools
 
           if ((ShowIntermediates & (Int16)ShowIntermediateResults.DrawRois) != 0)
           {
-            // Rechteck zeichnen
+            // draw rectangle
             CvInvoke.Line(originalImage, topLeft, topRight, new MCvScalar(0, 255, 0), 2);
             CvInvoke.Line(originalImage, topLeft, bottomLeft, new MCvScalar(0, 255, 0), 2);
             CvInvoke.Line(originalImage, bottomLeft, bottomRight, new MCvScalar(0, 255, 0), 2);
             CvInvoke.Line(originalImage, topRight, bottomRight, new MCvScalar(0, 255, 0), 2);
           }
 
-          // Rechteck definieren
+          // define roi
           int shrink = Convert.ToInt16(dxt * 0.20); // take 15% off from all sides
           Rectangle rect = new Rectangle(topLeft.X + shrink, topLeft.Y + shrink, topRight.X - topLeft.X - (2 * shrink), bottomLeft.Y - topLeft.Y - (2 * shrink));
           Mat roi = new Mat(grayImage, rect);
-          SaveRegionToFile(roi, @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}.png");
-
+          SaveRegionToFile(roi, Path.Combine(_dataFolder, $"{r}{c}.png"));
+          
           var isBlack = blackValues[r, c];
           board[r, c] = isBlack ? '#' : ' ';
           var digit = isBlack 
             ? GetDigitFromBlackCell (roi, r, c, isScreenShot) 
-            : GetDigitFromWhiteCell(roi, r, c, avgWhite, isScreenShot);
+            : GetDigitFromWhiteCell (roi, r, c, avgWhite, isScreenShot);
 
           if (digit >= 1 && digit <= 9)
           {
@@ -436,8 +433,7 @@ namespace Str8tsSolverImageTools
         val = digit - '0';
 
       CvInvoke.PutText(img4Ocr, $"{val}", new Point(3, roi.Height - 3), FontFace.HersheyPlain, 4, new MCvScalar(0, 0, 0), 4);
-      SaveRegionToFile(img4Ocr, @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}c.png");
-
+      SaveRegionToFile(img4Ocr, Path.Combine(_dataFolder, $"{r}{c}c.png")); 
       return val;
     }
 
@@ -471,7 +467,7 @@ namespace Str8tsSolverImageTools
         val = digit - '0';
 
       CvInvoke.PutText(img4Ocr, $"{val}", new Point(3, roi.Height - 3), FontFace.HersheyPlain, 4, new MCvScalar(222, 222, 222), 4);
-      SaveRegionToFile(img4Ocr, @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}c.png");
+      SaveRegionToFile(img4Ocr, Path.Combine(_dataFolder, $"{r}{c}c.png"));
 
       return val;
     }
@@ -492,9 +488,8 @@ namespace Str8tsSolverImageTools
         CvInvoke.Line(histImage, new Point(i, 256), new Point(i, 256 - binVal), new MCvScalar(0, 255, 0), 2);
       }
 
-      // Speichern Sie das Histogramm-Bild als PNG-Datei
-      string filePath = @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}h.png";
-      CvInvoke.Imwrite(filePath, histImage);
+      // Store Histogramm as PNG-File
+      CvInvoke.Imwrite(Path.Combine(_dataFolder, $"{r}{c}h.png"), histImage);
     }
 
     public static void SaveRegionToFile(Mat roi, string filePath)
@@ -522,7 +517,14 @@ namespace Str8tsSolverImageTools
           var color = black ? new MCvScalar(222, 222, 222) : new MCvScalar(0, 0, 0);
           CvInvoke.PutText(img, $"{(int)hit.Confident}", new Point(3, img.Height - 3), FontFace.HersheyPlain, 4, color, 4);
           CvInvoke.Rectangle(img, hit.Region, color, 1);
-          SaveRegionToFile(img, @$"D:\Jens\Repositories\Str8tsSolver\Data\{r}{c}v.png");
+          SaveRegionToFile(img, Path.Combine(_dataFolder, $"{r}{c}v.png"));
+
+          if ((ShowIntermediates & (int)ShowIntermediateResults.ShowOcrResults) != 0)
+          {
+            color = new MCvScalar(222, 0, 0);
+            CvInvoke.PutText(_originalImage, $"{(int)hit.Confident}", new Point(3, img.Height - 3), FontFace.HersheyPlain, 4, color, 4);
+            CvInvoke.Rectangle(_originalImage, hit.Region, color, 1);
+          }
           return hit.Text[0];
         }
       }
