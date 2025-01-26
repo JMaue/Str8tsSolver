@@ -101,21 +101,6 @@ namespace Str8tsSolverImageTools
       return Find81Fields(_originalImage, contour);
     }
 
-    //public (Mat, char[,] board) FindBoard (string file)
-    //{
-    //  _originalImage = CvInvoke.Imread(file, ImreadModes.Color);
-
-    //  var contour = FindExternalContour(ref _originalImage);
-    //  if (contour.Count() >= 4) //Any())
-    //  {
-    //    var isScreenShot = IsScreenShot(contour);
-    //    var board = Find81Fields(_originalImage, contour, isScreenShot);
-
-    //    return (_originalImage, board);
-    //  }
-    //  return (_originalImage, new char[0,0]);
-    //}
-
     public List<Point> FindExternalContour(string file)
     {
       Mat image = CvInvoke.Imread(file, ImreadModes.Color);
@@ -286,7 +271,7 @@ namespace Str8tsSolverImageTools
           int shrink = Convert.ToInt16(dxt * 0.20); // take 15% off from all sides
           Rectangle rect = new Rectangle(topLeft.X + shrink, topLeft.Y + shrink, topRight.X - topLeft.X - (2 * shrink), bottomLeft.Y - topLeft.Y - (2 * shrink));
           Mat roi = new Mat(grayImage, rect);
-          SaveRegionToFile(roi, Path.Combine(_dataFolder, $"{r}{c}.png"));
+          SaveRegionToFile(roi, $"{r}{c}.png");
           
           var isBlack = blackValues[r, c];
           board[r, c] = isBlack ? '#' : ' ';
@@ -324,7 +309,7 @@ namespace Str8tsSolverImageTools
       var dyl = (lowerLeft.Y - upperLeft.Y) / 9;      // always positiv
 
       var board = new bool[9, 9];
-      double graySum = 0;
+
       void ProcessRectangles (Action<double, int, int> processAverage)
       {
         for (int r = 0; r < 9; r++)
@@ -362,6 +347,8 @@ namespace Str8tsSolverImageTools
           }
         }
       }
+
+      double graySum = 0;
       int[] vals = new int[256];
       ProcessRectangles((average, r, c) => {
         graySum += average;
@@ -397,16 +384,14 @@ namespace Str8tsSolverImageTools
 
     private static double GetAverageGrayValue(Mat grayImage, Rectangle rect)
     {
-      // Bereich des Bildes, der vom Rechteck umschlossen ist, extrahieren
+      // extract ROI
       Mat roi = new Mat(grayImage, rect);
 
-      // Summe der Pixelwerte berechnen
+      // calculate the sum of all pixel values
       MCvScalar sumScalar = CvInvoke.Sum(roi);
 
-      // Durchschnitt berechnen
-      double averageGrayValue = sumScalar.V0 / (rect.Width * rect.Height);
-
-      return averageGrayValue;
+      // return mean value
+      return sumScalar.V0 / (rect.Width * rect.Height);
     }
 
     private int GetDigitFromWhiteCell(Mat roi, int r, int c, int averageWhiteVal, bool isScreenShot)
@@ -423,13 +408,9 @@ namespace Str8tsSolverImageTools
         img4Ocr = graySmooth.Mat;
 
         Mat imgThresholded = new Mat();
-        double binThreshold = isScreenShot ? 150 : 180;
-
-        CvInvoke.Threshold(img4Ocr, imgThresholded, averageWhiteVal*1.2, 255, ThresholdType.Binary);
-        
-        //CvInvoke.Threshold(graySmooth, imgThresholded, binThreshold, 255, ThresholdType.Binary);
+        double binThreshold = averageWhiteVal * 1.2;
+        CvInvoke.Threshold(img4Ocr, imgThresholded, binThreshold, 255, ThresholdType.Binary);
         img4Ocr = imgThresholded;
-        //img4Ocr = graySmooth.Mat;
       }
 
       var digit = ExtractDigitsFromImage(img4Ocr, r, c, false);
@@ -438,7 +419,7 @@ namespace Str8tsSolverImageTools
         val = digit - '0';
 
       CvInvoke.PutText(img4Ocr, $"{val}", new Point(3, roi.Height - 3), FontFace.HersheyPlain, 4, new MCvScalar(0, 0, 0), 4);
-      SaveRegionToFile(img4Ocr, Path.Combine(_dataFolder, $"{r}{c}c.png"));
+      SaveRegionToFile(img4Ocr, $"{r}{c}c.png");
       return val;
     }
 
@@ -473,7 +454,7 @@ namespace Str8tsSolverImageTools
         val = digit - '0';
 
       CvInvoke.PutText(img4Ocr, $"{val}", new Point(3, roi.Height - 3), FontFace.HersheyPlain, 4, new MCvScalar(222, 222, 222), 4);
-      SaveRegionToFile(img4Ocr, Path.Combine(_dataFolder, $"{r}{c}c.png"));
+      SaveRegionToFile(img4Ocr, $"{r}{c}c.png");
 
       return val;
     }
@@ -494,28 +475,14 @@ namespace Str8tsSolverImageTools
       }
 
       // Store Histogramm as PNG-File
-      CvInvoke.Imwrite(Path.Combine(_dataFolder, $"{r}{c}h.png"), histImage);
+      SaveRegionToFile(histImage, $"{r}{c}h.png");
     }
 
-    public static void SaveRegionToFile(Mat roi, string filePath)
+    public void SaveRegionToFile(Mat roi, string filename)
     {
 #if DEBUG
-      // Bild in Datei speichern
-      CvInvoke.Imwrite(filePath, roi);
+      CvInvoke.Imwrite(Path.Combine(_dataFolder, filename), roi);
 #endif
-    }
-
-    public Mat ResizeMat(Mat img, int newWidth)
-    {
-      // Berechne das neue Seitenverhältnis
-      double aspectRatio = (double)newWidth / img.Width;
-      int newHeight = (int)(img.Height * aspectRatio);
-
-      // Erstelle ein neues Mat-Objekt für das skalierte Bild
-      Mat resizedImg = new Mat();
-      CvInvoke.Resize(img, resizedImg, new Size(newWidth, newHeight));
-
-      return resizedImg;
     }
 
     private char ExtractDigitsFromImage(Mat img, int r, int c, bool black)
@@ -524,8 +491,6 @@ namespace Str8tsSolverImageTools
       {
         return word.Confident > 33 && word.Text.Trim().Length == 1 && word.Region.Height > img.Height * 0.4;
       }
-
-      var img2 = ResizeMat(img, 40);
 
       _ocr.SetImage(img);
       _ocr.Recognize();
@@ -539,7 +504,7 @@ namespace Str8tsSolverImageTools
           var color = black ? new MCvScalar(222, 222, 222) : new MCvScalar(0, 0, 0);
           CvInvoke.PutText(img, $"{(int)hit.Confident}", new Point(3, img.Height - 3), FontFace.HersheyPlain, 4, color, 4);
           CvInvoke.Rectangle(img, hit.Region, color, 1);
-          SaveRegionToFile(img, Path.Combine(_dataFolder, $"{r}{c}v.png"));
+          SaveRegionToFile(img, $"{r}{c}v.png");
 
           return hit.Text[0];
         }
