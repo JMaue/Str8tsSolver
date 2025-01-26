@@ -5,7 +5,6 @@ using Emgu.CV;
 using System.Drawing;
 using Emgu.CV.OCR;
 using System.Diagnostics;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Str8tsSolverImageTools
 {
@@ -32,6 +31,9 @@ namespace Str8tsSolverImageTools
 
     Mat _originalImage;
     List<Point> _contour;
+
+    public delegate void NumberDetectedHandler(int x, int y, char value);
+    public event NumberDetectedHandler NumberDetected;
 
     public BoardFinder(string dataFolder)
     {
@@ -98,21 +100,20 @@ namespace Str8tsSolverImageTools
       return Find81Fields(_originalImage, contour);
     }
 
-    public (Mat, char[,] board) FindBoard (string file)
-    {
-      _originalImage = CvInvoke.Imread(file, ImreadModes.Color);
+    //public (Mat, char[,] board) FindBoard (string file)
+    //{
+    //  _originalImage = CvInvoke.Imread(file, ImreadModes.Color);
 
-      var contour = FindExternalContour(ref _originalImage);
-      if (contour.Any())
-      {
-        _contour = new List<Point>(contour);
-        var isScreenShot = IsScreenShot(contour);
-        var board = Find81Fields(_originalImage, contour, isScreenShot);
+    //  var contour = FindExternalContour(ref _originalImage);
+    //  if (contour.Count() >= 4) //Any())
+    //  {
+    //    var isScreenShot = IsScreenShot(contour);
+    //    var board = Find81Fields(_originalImage, contour, isScreenShot);
 
-        return (_originalImage, board);
-      }
-      return (_originalImage, new char[0,0]);
-    }
+    //    return (_originalImage, board);
+    //  }
+    //  return (_originalImage, new char[0,0]);
+    //}
 
     public List<Point> FindExternalContour(string file)
     {
@@ -122,11 +123,11 @@ namespace Str8tsSolverImageTools
 
     public List<Point> FindExternalContour(ref Mat img)
     {
+      _originalImage = img;
       var rc = new List<Point>();
-      int count = 0;
       var imgX = img.Rows;
       var imgY = img.Cols;
-      var minSquareSize = Math.Min(imgX, imgY) * 0.8;
+      var minSquareSize = Math.Min(imgX, imgY) * 0.7;
 
       // Bild in Graustufen konvertieren
       using (Mat gray = new Mat())
@@ -148,7 +149,7 @@ namespace Str8tsSolverImageTools
               using (VectorOfPoint approxContour = new VectorOfPoint())
               {
                 // Kontur approximieren
-                CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.10, true);
+                CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.08, true);
 
                 // Prüfen, ob die approximierte Kontur mindestens 80% der Bildbreite einnimmt.
                 var maxX = 0;
@@ -174,9 +175,8 @@ namespace Str8tsSolverImageTools
                       CvInvoke.Circle(img, point, d, new MCvScalar(0, 255, 0), 5);
                     rc.Add(point);
                   }
-                  count++;
-                  if (count == 1)
-                    return rc;
+                  if (rc.Count == 4)
+                    break;
                 }
               }
             }
@@ -184,10 +184,10 @@ namespace Str8tsSolverImageTools
         }
       }
 
-      return rc;
+      return FindCornerPoints(rc);
     }
 
-    public Point[] FindCornerPoints(List<Point> contour)
+    public List<Point> FindCornerPoints(List<Point> contour)
     {
       Point upperLeft = new Point(0, 0);
       Point upperRight = new Point(0, 0);
@@ -220,16 +220,18 @@ namespace Str8tsSolverImageTools
         }
       }
 
-      return new Point[] { upperLeft, upperRight, lowerLeft, lowerRight };
+      _contour = new List<Point> { upperLeft, upperRight, lowerRight, lowerLeft };
+      return _contour;
     }
 
-    public char[,] Find81Fields(Mat originalImage, List<Point> contour, bool isScreenShot = false)
+    public char[,] Find81Fields(Mat originalImage, List<Point> contour)
     {
       var corners = FindCornerPoints(contour);
+      var isScreenShot = IsScreenShot(contour);
       Point upperLeft = corners[0];
       Point upperRight = corners[1];
-      Point lowerLeft = corners[2];
-      Point lowerRight = corners[3];
+      Point lowerRight = corners[2];
+      Point lowerLeft = corners[3];
 
       if ((ShowIntermediates & (Int16)ShowIntermediateResults.LabelCorner) != 0)
       {
@@ -300,9 +302,11 @@ namespace Str8tsSolverImageTools
 
             if ((ShowIntermediates & (Int16)ShowIntermediateResults.ShowGivenCells) != 0)
             {
-              var fontScale = ySize > 100 ? 10 : 3;
-              var thickness = ySize > 100 ? 10 : 4;
-              CvInvoke.PutText(originalImage, $"{digit}", bottomLeft, FontFace.HersheyPlain, fontScale, new MCvScalar(0, 255, 0), thickness);
+              _points[r, c] = bottomLeft;
+              NumberDetected?.Invoke(r, c, (char)('0' + digit));
+              //var fontScale = ySize > 100 ? 10 : 3;
+              //var thickness = ySize > 100 ? 10 : 4;
+              //CvInvoke.PutText(originalImage, $"{digit}", bottomLeft, FontFace.HersheyPlain, fontScale, new MCvScalar(0, 255, 0), thickness);
             }
           }
 
@@ -390,7 +394,7 @@ namespace Str8tsSolverImageTools
       return (board, mean, avgBlack, avgWhite);
     }
 
-    public static double GetAverageGrayValue(Mat grayImage, Rectangle rect)
+    private static double GetAverageGrayValue(Mat grayImage, Rectangle rect)
     {
       // Bereich des Bildes, der vom Rechteck umschlossen ist, extrahieren
       Mat roi = new Mat(grayImage, rect);
@@ -404,7 +408,7 @@ namespace Str8tsSolverImageTools
       return averageGrayValue;
     }
 
-    public int GetDigitFromWhiteCell(Mat roi, int r, int c, int averageWhiteVal, bool isScreenShot)
+    private int GetDigitFromWhiteCell(Mat roi, int r, int c, int averageWhiteVal, bool isScreenShot)
     {
       Mat img4Ocr = roi;
       SaveHistogramImage(roi, r, c);
@@ -437,7 +441,7 @@ namespace Str8tsSolverImageTools
       return val;
     }
 
-    public int GetDigitFromBlackCell (Mat roi, int r, int c, bool isScreenShot)
+    private int GetDigitFromBlackCell (Mat roi, int r, int c, bool isScreenShot)
     {
       Mat img4Ocr = roi;
 
@@ -472,15 +476,14 @@ namespace Str8tsSolverImageTools
       return val;
     }
 
-    public void SaveHistogramImage(Mat img, int r, int c)
+    private void SaveHistogramImage(Mat img, int r, int c)
     {
       DenseHistogram histogram = new DenseHistogram(256, new RangeF(0, 256));
       histogram.Calculate(new Image<Gray, byte>[] { img.ToImage<Gray, byte>() }, false, null);
 
       // Optional: Um das Histogramm anzuzeigen
-      Mat histImage = new Mat();
       CvInvoke.Normalize(histogram, histogram, 0, 255, NormType.MinMax);
-      histImage = new Mat(256, 256, DepthType.Cv8U, 1);
+      Mat histImage = new Mat(256, 256, DepthType.Cv8U, 1);
       histImage.SetTo(new MCvScalar(255));
       for (int i = 0; i < 256; i++)
       {
@@ -536,34 +539,77 @@ namespace Str8tsSolverImageTools
       var corners = FindCornerPoints(contour);
       Point upperLeft = corners[0];
       Point upperRight = corners[1];
-      Point lowerLeft = corners[2];
-      Point lowerRight = corners[3];
+      Point lowerRight = corners[2];
+      Point lowerLeft = corners[3];
 
       return upperLeft.Y == upperRight.Y && lowerLeft.Y == lowerRight.Y && upperLeft.X == lowerLeft.X && upperRight.X == lowerRight.X;
     }
 
-    public Mat PositionSolved(int x, int y, char newValue)
+    public Mat PositionSolved(int x, int y, char newValue, bool green = false)
     {
-      var fontScale = ySize > 100 ? 10 : 3;
-      var thickness = ySize > 100 ? 10 : 4;
-      CvInvoke.PutText(_originalImage, $"{newValue}", _points[x,y], FontFace.HersheyPlain, fontScale, black, thickness);
+      var fontScale = ySize > 100 ? 7 : 2;
+      var thickness = ySize > 100 ? 7 : 3;
+      var point = new Point(_points[x,y].X + 10, _points[x,y].Y - 10);
+      if (green)
+        CvInvoke.PutText(_originalImage, $"{newValue}", point, FontFace.HersheyPlain, fontScale, new MCvScalar(0, 255, 0), thickness);
+      else
+        CvInvoke.PutText(_originalImage, $"{newValue}", point, FontFace.HersheyPlain, fontScale, black, thickness);
  
       return _originalImage;
     }
 
-    public Mat MarkSolved()
+    public Mat OnFinished(bool success)
     {
-      if (_contour.Count > 2)
+      if (success)
       {
-
-        for (int i = 0; i < _contour.Count; i++)
+        if (_contour.Count > 2)
         {
-          Point startPoint = _contour[i];
-          Point endPoint = _contour[(i + 1) % _contour.Count]; // Verbindet den letzten Punkt mit dem ersten Punkt
-          CvInvoke.Line(_originalImage, startPoint, endPoint, new MCvScalar(0, 255, 0), 10);
+          for (int i = 0; i < _contour.Count; i++)
+          {
+            Point startPoint = _contour[i];
+            Point endPoint = _contour[(i + 1) % _contour.Count]; // Verbindet den letzten Punkt mit dem ersten Punkt
+            CvInvoke.Line(_originalImage, startPoint, endPoint, new MCvScalar(0, 255, 0), 10);
+          }
+        }
+        else
+        {
+
         }
       }
+      else
+      {
+        DrawSadSmiley();
+      }
       return _originalImage;
+    }
+
+    public void DrawSadSmiley()
+    {
+      var corners = FindCornerPoints(_contour);
+    
+      Point upperLeft = corners[0];
+      Point upperRight = corners[1];
+      Point lowerRight = corners[2];
+      Point lowerLeft = corners[3];
+
+      int centerX = upperLeft.X + (upperRight.X - upperLeft.X) / 2;
+      int centerY = upperLeft.Y + (lowerLeft.Y - upperLeft.Y) / 2;
+
+      // Berechne den Radius des Smileys
+      int radius = (upperRight.X - upperLeft.X) / 4;
+
+      // Zeichne das Gesicht
+      CvInvoke.Circle(_originalImage, new Point(centerX, centerY), radius, new MCvScalar(0, 0, 255), 15);
+
+      // Zeichne die Augen
+      int eyeRadius = radius / 10;
+      CvInvoke.Circle(_originalImage, new Point(centerX - radius / 2, centerY - radius / 2), eyeRadius, new MCvScalar(0, 0, 255), -1);
+      CvInvoke.Circle(_originalImage, new Point(centerX + radius / 2, centerY - radius / 2), eyeRadius, new MCvScalar(0, 0, 255), -1);
+
+      // Zeichne den traurigen Mund
+      int mouthWidth = radius;
+      int mouthHeight = radius / 2;
+      CvInvoke.Ellipse(_originalImage, new Point(centerX, centerY + mouthHeight / 2), new Size(mouthWidth / 2, mouthHeight / 2), 0, 0, -180, new MCvScalar(0, 0, 255), 15);
     }
   }
 }

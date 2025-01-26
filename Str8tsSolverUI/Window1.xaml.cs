@@ -4,6 +4,8 @@ using System.Windows;
 using Str8tsSolverLib;
 using System.Threading.Tasks;
 using System.Configuration;
+using System.Runtime.InteropServices;
+using Emgu.CV.CvEnum;
 
 namespace Str8tsSolver.WPF
 {
@@ -39,27 +41,31 @@ namespace Str8tsSolver.WPF
         string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
         if (files.Length > 0)
         {
-          _boardFinder.ShowIntermediates = (int)(ShowIntermediateResults.CornerCycle | ShowIntermediateResults.ShowOcrResults);
-          var (image, chars) = _boardFinder.FindBoard(files[0]);
-          imageBox.Source = image.ToBitmapSource();
-
-          var board = new Board(chars);
-          board.ReadBoard();
-          board.PositionSolved += OnPositionSolved;
-
+          _boardFinder.ShowIntermediates = (int)(ShowIntermediateResults.CornerCycle | ShowIntermediateResults.ShowOcrResults | ShowIntermediateResults.DrawAllContours | ShowIntermediateResults.ShowGivenCells);
+          var img = CvInvoke.Imread(files[0], ImreadModes.Color);
+          var contour = _boardFinder.FindExternalContour(ref img);
+          imageBox.Source = img.ToBitmapSource();
           Task.Run(() =>
           {
-            bool isSolved = Str8tsSolverLib.Str8tsSolver.Solve(board, out var iterations);
-            Dispatcher.Invoke(() =>
+            if (contour.Count >= 4)
             {
-              if (isSolved)
+              _boardFinder.NumberDetected += OnNumberDetected;
+              var chars = _boardFinder.Find81Fields(img, contour);
+
+              var board = new Board(chars);
+              board.ReadBoard();
+              board.PositionSolved += OnPositionSolved;
+
+              Task.Run(() =>
               {
-                var mat = _boardFinder.MarkSolved();
-                imageBox.Source = mat.ToBitmapSource();
-              }
-              else
-                MessageBox.Show("Not solved");
-            });
+                bool isSolved = Str8tsSolverLib.Str8tsSolver.Solve(board, out var iterations);
+                Dispatcher.Invoke(() =>
+                {
+                  var mat = _boardFinder.OnFinished(isSolved);
+                  imageBox.Source = mat.ToBitmapSource();
+                });
+              });
+            }
           });
         }
       }
@@ -67,12 +73,20 @@ namespace Str8tsSolver.WPF
 
     private void OnPositionSolved(int x, int y, char newValue)
     {
-      // Verwende den Dispatcher, um den Code im UI-Thread auszuführen
+      // use the Dispatcher, to execute the code in the UI-Thread
       Dispatcher.Invoke(() =>
       {
-        //var img = (BitmapSource)imageBox.Source;
-        //var mat = img.ToMat();
         var mat = _boardFinder.PositionSolved(x, y, newValue);
+        imageBox.Source = mat.ToBitmapSource();
+      });
+      Task.Delay(100).Wait();
+    }
+    private void OnNumberDetected(int x, int y, char newValue)
+    {
+      // use the Dispatcher, to execute the code in the UI-Thread
+      Dispatcher.Invoke(() =>
+      {
+        var mat = _boardFinder.PositionSolved(x, y, newValue, true);
         imageBox.Source = mat.ToBitmapSource();
       });
       Task.Delay(100).Wait();
