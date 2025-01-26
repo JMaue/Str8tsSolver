@@ -14,15 +14,14 @@ namespace Str8tsSolverImageTools
     CornerCycle = 2,
     DrawAllContours = 4,
     DrawRois = 8,
-    ShowGivenCells = 16,
-    ShowOcrResults = 32,
+    ShowOcrResults = 16
   }
 
-  public class BoardFinder
+  public class BoardFinder : IDisposable
   {
     private readonly string _dataFolder;
 
-    Tesseract _ocr = new();
+    Tesseract? _ocr = new();
 
     // bottom left coordinates of each of the 9x9 grid cells to write the solution in the OnSolved callback
     Point[,] _points = new Point[9, 9];
@@ -39,6 +38,11 @@ namespace Str8tsSolverImageTools
     {
       _dataFolder = dataFolder;
       InitOcr(Tesseract.DefaultTesseractDirectory, "eng", OcrEngineMode.TesseractOnly);
+    }
+
+    public void Dispose()
+    {
+      _ocr?.Dispose();
     }
 
     public Int16 ShowIntermediates { get; set; } = 0;
@@ -69,11 +73,8 @@ namespace Str8tsSolverImageTools
 
       try
       {
-        if (_ocr != null)
-        {
-          _ocr.Dispose();
-          _ocr = null;
-        }
+        _ocr?.Dispose();
+        _ocr = null;
 
         if (String.IsNullOrEmpty(path))
           path = Tesseract.DefaultTesseractDirectory;
@@ -290,7 +291,7 @@ namespace Str8tsSolverImageTools
           var isBlack = blackValues[r, c];
           board[r, c] = isBlack ? '#' : ' ';
           var digit = isBlack 
-            ? GetDigitFromBlackCell (roi, r, c, isScreenShot) 
+            ? GetDigitFromBlackCell (roi, r, c, avgWhite, isScreenShot) 
             : GetDigitFromWhiteCell (roi, r, c, avgWhite, isScreenShot);
 
           if (digit >= 1 && digit <= 9)
@@ -300,13 +301,10 @@ namespace Str8tsSolverImageTools
             else
               board[r, c] = (char)('0' + digit);
 
-            if ((ShowIntermediates & (Int16)ShowIntermediateResults.ShowGivenCells) != 0)
+            if ((ShowIntermediates & (Int16)ShowIntermediateResults.ShowOcrResults) != 0)
             {
               _points[r, c] = bottomLeft;
               NumberDetected?.Invoke(r, c, (char)('0' + digit));
-              //var fontScale = ySize > 100 ? 10 : 3;
-              //var thickness = ySize > 100 ? 10 : 4;
-              //CvInvoke.PutText(originalImage, $"{digit}", bottomLeft, FontFace.HersheyPlain, fontScale, new MCvScalar(0, 255, 0), thickness);
             }
           }
 
@@ -350,7 +348,10 @@ namespace Str8tsSolverImageTools
             ySize = bottomLeft.Y - topLeft.Y;
 
             // Rechteck definieren
-            int shrink = Convert.ToInt16(dxt * 0.20); // take 15% off from all sides
+            var dMin = Math.Min(dxt, dyt);
+            dMin = Math.Min(dMin, dxb);
+            dMin = Math.Min(dMin, dyb);
+            int shrink = Convert.ToInt16(dMin * 0.20); // take 20% off from all sides
             Rectangle rect = new Rectangle(topLeft.X + shrink, topLeft.Y + shrink, topRight.X - topLeft.X - (2 * shrink), bottomLeft.Y - topLeft.Y - (2 * shrink));
 
             // Durchschnittlichen Grauwert berechnen
@@ -437,11 +438,11 @@ namespace Str8tsSolverImageTools
         val = digit - '0';
 
       CvInvoke.PutText(img4Ocr, $"{val}", new Point(3, roi.Height - 3), FontFace.HersheyPlain, 4, new MCvScalar(0, 0, 0), 4);
-      SaveRegionToFile(img4Ocr, Path.Combine(_dataFolder, $"{r}{c}c.png")); 
+      SaveRegionToFile(img4Ocr, Path.Combine(_dataFolder, $"{r}{c}c.png"));
       return val;
     }
 
-    private int GetDigitFromBlackCell (Mat roi, int r, int c, bool isScreenShot)
+    private int GetDigitFromBlackCell (Mat roi, int r, int c, int averageWhiteVal, bool isScreenShot)
     {
       Mat img4Ocr = roi;
 
@@ -458,7 +459,8 @@ namespace Str8tsSolverImageTools
         //Mat imgThresholded = new Mat();
         //double binThreshold = isScreenShot ? 150 : 180;
 
-        CvInvoke.Threshold(roi, img4Ocr, 0, 255, ThresholdType.Binary | ThresholdType.Otsu);
+        //CvInvoke.Threshold(roi, img4Ocr, 0, 255, ThresholdType.Binary | ThresholdType.Otsu);
+        CvInvoke.Threshold(roi, img4Ocr, averageWhiteVal * 0.70, 255, ThresholdType.Binary);
 
         //CvInvoke.Threshold(graySmooth, imgThresholded, binThreshold, 255, ThresholdType.Binary);
         //img4Ocr = roi;
@@ -497,16 +499,33 @@ namespace Str8tsSolverImageTools
 
     public static void SaveRegionToFile(Mat roi, string filePath)
     {
+#if DEBUG
       // Bild in Datei speichern
       CvInvoke.Imwrite(filePath, roi);
+#endif
+    }
+
+    public Mat ResizeMat(Mat img, int newWidth)
+    {
+      // Berechne das neue Seitenverhältnis
+      double aspectRatio = (double)newWidth / img.Width;
+      int newHeight = (int)(img.Height * aspectRatio);
+
+      // Erstelle ein neues Mat-Objekt für das skalierte Bild
+      Mat resizedImg = new Mat();
+      CvInvoke.Resize(img, resizedImg, new Size(newWidth, newHeight));
+
+      return resizedImg;
     }
 
     private char ExtractDigitsFromImage(Mat img, int r, int c, bool black)
     {
       bool Validate (Tesseract.Word word) 
       {
-        return word.Confident > 75 && word.Text.Trim().Length == 1 && word.Region.Height > img.Height * 0.4;
+        return word.Confident > 33 && word.Text.Trim().Length == 1 && word.Region.Height > img.Height * 0.4;
       }
+
+      var img2 = ResizeMat(img, 40);
 
       _ocr.SetImage(img);
       _ocr.Recognize();
@@ -522,12 +541,6 @@ namespace Str8tsSolverImageTools
           CvInvoke.Rectangle(img, hit.Region, color, 1);
           SaveRegionToFile(img, Path.Combine(_dataFolder, $"{r}{c}v.png"));
 
-          if ((ShowIntermediates & (int)ShowIntermediateResults.ShowOcrResults) != 0)
-          {
-            color = new MCvScalar(222, 0, 0);
-            CvInvoke.PutText(_originalImage, $"{(int)hit.Confident}", new Point(3, img.Height - 3), FontFace.HersheyPlain, 4, color, 4);
-            CvInvoke.Rectangle(_originalImage, hit.Region, color, 1);
-          }
           return hit.Text[0];
         }
       }

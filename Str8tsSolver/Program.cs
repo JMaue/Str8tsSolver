@@ -37,9 +37,10 @@
       string imagePath12 = @"D:\Jens\Repositories\Str8tsSolver\Data\20250106_1916";
       string imagePath13 = @"D:\Jens\Repositories\Str8tsSolver\Data\2024-01-12.png";
 
-      var bf = new BoardFinder();
+      var bf = new BoardFinder(@"..\data");
       var grid = bf.ReadBoardFromImage(imagePath9);
-      grid[0, 5] = 'H';
+      bf.Dispose();
+
       var board = new Board (grid);
       board.ReadBoard();
       board.PrintBoard(true);

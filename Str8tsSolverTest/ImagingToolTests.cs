@@ -13,7 +13,13 @@ namespace Str8tsSolverTest
     [SetUp]
     public void Setup()
     {
-      _boardFinder = new BoardFinder();
+      _boardFinder = new BoardFinder("");
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+      _boardFinder.Dispose();
     }
 
     public static IEnumerable<string> GetTestFiles()

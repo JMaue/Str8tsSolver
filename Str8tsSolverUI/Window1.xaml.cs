@@ -41,7 +41,9 @@ namespace Str8tsSolver.WPF
         string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
         if (files.Length > 0)
         {
-          _boardFinder.ShowIntermediates = (int)(ShowIntermediateResults.CornerCycle | ShowIntermediateResults.ShowOcrResults | ShowIntermediateResults.DrawAllContours | ShowIntermediateResults.ShowGivenCells);
+          _boardFinder.ShowIntermediates = (int)ShowIntermediateResults.CornerCycle;
+          _boardFinder.ShowIntermediates |= (int)(ShowIntermediateResults.ShowOcrResults | ShowIntermediateResults.DrawAllContours);
+          
           var img = CvInvoke.Imread(files[0], ImreadModes.Color);
           var contour = _boardFinder.FindExternalContour(ref img);
           imageBox.Source = img.ToBitmapSource();
