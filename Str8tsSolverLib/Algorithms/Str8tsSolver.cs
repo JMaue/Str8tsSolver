@@ -52,11 +52,11 @@ namespace Str8tsSolverLib
       do
       {
         progress = false;
-        //foreach (var alg in algorithms)
         var alg = iterations == 0 ? algorithms[0] : algorithms[1];
         //foreach (var alg in algorithms)
         {
-          foreach (var str8t in board.Str8ts)
+          var sortedStr8ts = board.Str8ts.OrderBy(s => s.Len).ToList();
+          foreach (var str8t in sortedStr8ts)
           {
             if (!str8t.IsSolved())
             {
@@ -72,10 +72,6 @@ namespace Str8tsSolverLib
             board.PrintBoard(true);
         }
 
-        //if (progress)
-        //{
-        //  board.PrintBoard(true);
-        //}
         iterations++;
 
       } while (progress || iterations == 1);
