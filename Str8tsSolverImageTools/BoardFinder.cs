@@ -316,7 +316,7 @@ namespace Str8tsSolverImageTools
       var dxl = (upperLeft.X - lowerLeft.X) / 9;
       var dyl = (lowerLeft.Y - upperLeft.Y) / 9;      // always positiv
 
-      var board = new bool[9, 9];
+      var isBlack = new bool[9, 9];
 
       void ProcessRectangles (Action<double, int, int> processAverage)
       {
@@ -356,38 +356,20 @@ namespace Str8tsSolverImageTools
         }
       }
 
-      double graySum = 0;
-      int[] vals = new int[256];
+      int[] vals = new int[81];
       ProcessRectangles((average, r, c) => {
-        graySum += average;
-        vals[Convert.ToInt32(average)]++;
+        vals[9*r+c] = (int)average;
       });
-      int mean = Convert.ToInt32(graySum / 81);
-      int avgWhite = 0;
-      int noWhite = 0;
-      int avgBlack = 0;
-      int noBlack = 0;
-      for (int i=0; i<256; i++)
+      var (blackCluster, whiteCluster) = KMeansClustering.ClassifyIntoClusters(vals);
+      int avgWhite = whiteCluster.Sum() / whiteCluster.Length;
+      int avgBlack = blackCluster.Sum() / blackCluster.Length;
+
+      for (int i = 0; i < 81; i++)
       {
-        if (vals[i] == 0)
-          continue; 
-        if (i > mean)
-        {
-          avgWhite += i*vals[i];
-          noWhite += vals[i];
-        }
-        else
-        {
-          avgBlack += i * vals[i];
-          noBlack += vals[i];
-        }
+        isBlack[i/9, i%9] = blackCluster.Contains(vals[i]);
       }
-      avgBlack /= noBlack;
-      avgWhite /= noWhite;
-
-      ProcessRectangles((average, r, c) => board[r, c] = average < mean);
-
-      return (board, mean, avgBlack, avgWhite);
+      int mean = avgBlack + avgWhite / 2;
+      return (isBlack, mean, avgBlack, avgWhite);
     }
 
     private static double GetAverageGrayValue(Mat grayImage, Rectangle rect)
@@ -566,7 +548,7 @@ namespace Str8tsSolverImageTools
       }
       else
       {
-        DrawSadSmiley();
+        //DrawSadSmiley();
       }
       return _originalImage;
     }
