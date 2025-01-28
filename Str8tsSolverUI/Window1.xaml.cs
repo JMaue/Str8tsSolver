@@ -53,6 +53,7 @@ namespace Str8tsSolver.WPF
             {
               _boardFinder.NumberDetected += OnNumberDetected;
               var chars = _boardFinder.Find81Fields(img, contour);
+              _boardFinder.NumberDetected -= OnNumberDetected;
 
               var board = new Board(chars);
               board.ReadBoard();
@@ -61,6 +62,7 @@ namespace Str8tsSolver.WPF
               Task.Run(() =>
               {
                 bool isSolved = Str8tsSolverLib.Str8tsSolver.Solve(board, out var iterations);
+                board.PositionSolved -= OnPositionSolved;
                 Dispatcher.Invoke(() =>
                 {
                   var mat = _boardFinder.OnFinished(isSolved);
