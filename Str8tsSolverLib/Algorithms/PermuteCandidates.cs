@@ -61,7 +61,7 @@ namespace Str8tsSolverLib
             var emptyCells = str8t.Cells;
             idxOfCell = emptyCells.IndexOf(' ', idxOfCell);
             var cell = str8t.Members[idxOfCell++];
-            cell.UpdateCandidates(candidates4Cells[i]);
+            success |= cell.UpdateCandidates(candidates4Cells[i]);
 
             var firstValue = candidates[0][i];
             bool allSame = candidates.All(o => o[i] == firstValue);

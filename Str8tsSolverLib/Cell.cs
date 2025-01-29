@@ -63,15 +63,17 @@ namespace Str8tsSolverLib
 
     public List<int> Candidates = new List<int>();
 
-    internal void UpdateCandidates(List<int> list)
+    internal bool UpdateCandidates(List<int> list)
     {
+      var noOfCandidates = Candidates.Count;
       if (Candidates.Count == 0 && Value == ' ')
       {
         Candidates.AddRange(list.Distinct());
-        return;
+        return false;
       }
 
       Candidates.RemoveAll(c => !list.Contains(c));
+      return noOfCandidates > Candidates.Count; // less candidates means progress!
     }
 
     internal bool WouldEraseCandidates(char[] values)
