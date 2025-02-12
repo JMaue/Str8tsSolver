@@ -21,7 +21,7 @@ namespace Str8tsSolverImageTools
   {
     private readonly string _dataFolder;
 
-    Tesseract? _ocr = new();
+    Tesseract? _ocr = null;
 
     // bottom left coordinates of each of the 9x9 grid cells to write the solution in the OnSolved callback
     readonly Point[,] _points = new Point[9, 9];
@@ -37,7 +37,6 @@ namespace Str8tsSolverImageTools
     public BoardFinder(string dataFolder)
     {
       _dataFolder = dataFolder;
-      InitOcr(Tesseract.DefaultTesseractDirectory, "eng", OcrEngineMode.TesseractOnly);
     }
 
     public void Dispose()
@@ -474,6 +473,30 @@ namespace Str8tsSolverImageTools
 #endif
     }
 
+    public string Stream2File(Stream stream)
+    {
+      var fn = "stream.png";
+      using (var memoryStream = new MemoryStream())
+      {
+        try
+        {
+          stream.CopyTo(memoryStream);
+          byte[] data = memoryStream.ToArray();
+          Mat mat = new Mat();
+          CvInvoke.Imdecode(data, ImreadModes.Color, mat);
+          CvInvoke.Circle(mat, new Point(100, 100), 50, new MCvScalar(0, 0, 255), 2);
+          SaveRegionToFile(mat, fn);
+          return fn;
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex.Message);
+          return "";
+        }
+
+      }
+    }
+
     private char ExtractDigitsFromImage(Mat img, int r, int c, bool black)
     {
       bool Validate (Tesseract.Word word) 
@@ -482,7 +505,7 @@ namespace Str8tsSolverImageTools
       }
 
       if (_ocr == null)
-        return ' ';
+        InitOcr(Tesseract.DefaultTesseractDirectory, "eng", OcrEngineMode.TesseractOnly);
 
       _ocr.SetImage(img);
       _ocr.Recognize();

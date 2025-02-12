@@ -7,7 +7,6 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Emgu.CV;
 using Emgu.CV.CvEnum;
 
 namespace Emgu.CV
@@ -42,7 +41,7 @@ namespace Emgu.CV
                     ptr,
                     IntPtr.Zero,
                     Int32Rect.Empty,
-                    System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
+                    BitmapSizeOptions.FromEmptyOptions());
 
                 DeleteObject(ptr); //release the HBitmap
                 return bs;

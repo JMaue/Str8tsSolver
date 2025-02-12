@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"    
+             xmlns:drawable="clr-namespace:Str8tsSolver"
+             x:Class="Str8tsSolver.MainPage">
+  <ContentPage.Resources>
+    <drawable:BoardDrawable x:Key="drawable" />
+  </ContentPage.Resources>
+  <ScrollView>
+    <AbsoluteLayout>
+      <toolkit:CameraView x:Name="MyCamera" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" MediaCaptured="MyCamera_MediaCaptured" />
+      <GraphicsView Drawable="{StaticResource drawable}" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" HeightRequest="500" WidthRequest="400"/>
+    </AbsoluteLayout>    
+    <!--<VerticalStackLayout Padding="30,0" Spacing="25">
+      <toolkit:CameraView x:Name="MyCamera" MediaCaptured="MyCamera_MediaCaptured" />
+      <GraphicsView Drawable="{StaticResource drawable}" HeightRequest="500" WidthRequest="400"/>
+    </VerticalStackLayout>-->
+  </ScrollView>
+
+</ContentPage>
