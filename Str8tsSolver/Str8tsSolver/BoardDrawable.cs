@@ -14,7 +14,7 @@ namespace Str8tsSolver
       canvas.StrokeColor = Colors.Red;
       canvas.StrokeSize = 4;
       var rect = new RectF(dirtyRect.X + 10, dirtyRect.Y + 10, dirtyRect.Width - 20, dirtyRect.Height - 20);
-      canvas.DrawRectangle (dirtyRect);
+      canvas.DrawRectangle (rect);
     }
   }
 }

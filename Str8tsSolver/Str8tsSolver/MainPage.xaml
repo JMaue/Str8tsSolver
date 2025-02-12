@@ -10,12 +10,8 @@
   <ScrollView>
     <AbsoluteLayout>
       <toolkit:CameraView x:Name="MyCamera" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" MediaCaptured="MyCamera_MediaCaptured" />
-      <GraphicsView Drawable="{StaticResource drawable}" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" HeightRequest="500" WidthRequest="400"/>
+      <GraphicsView Drawable="{StaticResource drawable}" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" HeightRequest="500"/>
     </AbsoluteLayout>    
-    <!--<VerticalStackLayout Padding="30,0" Spacing="25">
-      <toolkit:CameraView x:Name="MyCamera" MediaCaptured="MyCamera_MediaCaptured" />
-      <GraphicsView Drawable="{StaticResource drawable}" HeightRequest="500" WidthRequest="400"/>
-    </VerticalStackLayout>-->
   </ScrollView>
 
 </ContentPage>
