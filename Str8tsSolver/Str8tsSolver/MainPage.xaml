@@ -5,12 +5,12 @@
              xmlns:drawable="clr-namespace:Str8tsSolver"
              x:Class="Str8tsSolver.MainPage">
   <ContentPage.Resources>
-    <drawable:BoardDrawable x:Key="drawable" />
+    <drawable:BoardDrawable x:Key="drawable" x:Name="myGraphics"/>
   </ContentPage.Resources>
   <ScrollView>
     <AbsoluteLayout>
       <toolkit:CameraView x:Name="MyCamera" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" MediaCaptured="MyCamera_MediaCaptured" />
-      <GraphicsView Drawable="{StaticResource drawable}" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" HeightRequest="500"/>
+      <GraphicsView x:Name="myView" Drawable="{StaticResource drawable}" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" HeightRequest="500"/>
     </AbsoluteLayout>    
   </ScrollView>
 
