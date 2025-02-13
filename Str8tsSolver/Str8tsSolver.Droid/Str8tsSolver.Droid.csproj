@@ -11,6 +11,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Emgu.CV" Version="4.10.0.5680" />
+		<PackageReference Include="Emgu.CV.Bitmap" Version="4.10.0.5680" />
+		<PackageReference Include="Emgu.CV.runtime.maui.mini.android" Version="4.10.0.5680" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.40" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
 	</ItemGroup>

@@ -6,6 +6,9 @@ using System.Drawing;
 using Emgu.CV.OCR;
 using System.Diagnostics;
 
+using Point = System.Drawing.Point;
+using Size = System.Drawing.Size;
+
 namespace Str8tsSolverImageTools
 {
   public enum ShowIntermediateResults : Int16

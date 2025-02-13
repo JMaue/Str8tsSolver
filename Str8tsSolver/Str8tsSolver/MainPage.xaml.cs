@@ -4,23 +4,30 @@ using Microsoft.Maui.Graphics;
 using System.IO;
 using System.Threading;
 using System.Timers;
+using Str8tsSolverImageTools;
+using System.Diagnostics.Metrics;
 
 namespace Str8tsSolver
 {
   public partial class MainPage : ContentPage
   {
     private ICameraProvider _cameraProvider;
-    private int _counter;
 
     private AutoResetEvent _captureEvent = new AutoResetEvent(true);
     private CancellationTokenSource _cancellationTokenSource;
     private Thread _captureThread;
+    private int _counter = 0;
+
+    private double _viewWidth;
+    private double _viewHeight;
+
+    private ContourFinder _contourFinder;
 
     public MainPage(ICameraProvider cp)
     {
       InitializeComponent();
       _cameraProvider = cp;
-      _counter = 0;
+      _contourFinder = new ContourFinder();
 
       MyCamera.MediaCaptured += MyCamera_MediaCaptured;
 
@@ -36,6 +43,10 @@ namespace Str8tsSolver
     private async Task CaptureImagesPeriodically(CancellationToken token)
     {
       Thread.Sleep(2000);
+
+      _viewWidth = myView.Width;
+      _viewHeight = myView.Height;
+
       while (!token.IsCancellationRequested)
       {
         string currentThreadName = Thread.CurrentThread.Name;
@@ -75,7 +86,15 @@ namespace Str8tsSolver
         return;
 
       _counter++;
-      myGraphics.UpdatePosition(_counter, _counter);
+      try
+      {
+        var corners = _contourFinder.FindExternalContour(bytes, out int width, out int heigth);
+        myGraphics.UpdatePosition(corners, _viewWidth, _viewHeight, width, heigth,  _counter);
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine(ex.Message);
+      }
       myView.Invalidate();      
       _captureEvent.Set();
 

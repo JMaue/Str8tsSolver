@@ -4,7 +4,6 @@ using System.Windows;
 using Str8tsSolverLib;
 using System.Threading.Tasks;
 using System.Configuration;
-using System.Runtime.InteropServices;
 using Emgu.CV.CvEnum;
 
 namespace Str8tsSolver.WPF
