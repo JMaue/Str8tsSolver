@@ -49,7 +49,6 @@ namespace Str8tsSolver
 
       while (!token.IsCancellationRequested)
       {
-        string currentThreadName = Thread.CurrentThread.Name;
         MyCamera.CaptureImage(CancellationToken.None);
         _captureEvent.Reset();
         _captureEvent.WaitOne();
@@ -89,27 +88,21 @@ namespace Str8tsSolver
       try
       {
         var corners = _contourFinder.FindExternalContour(bytes, out int width, out int heigth);
-        myGraphics.UpdatePosition(corners, _viewWidth, _viewHeight, width, heigth,  _counter);
+        if (corners.Count == 0)
+        {
+          myGraphics.InvalidatePosition(_counter);
+        }
+        else
+        {
+          myGraphics.UpdatePosition(corners, _viewWidth, _viewHeight, width, heigth, _counter);
+        }
       }
       catch (Exception ex)
       {
-        Console.WriteLine(ex.Message);
+        myGraphics.InvalidatePosition(_counter, ex.Message);
       }
       myView.Invalidate();      
-      _captureEvent.Set();
-
-      //if (_currentFrame != null)
-      //{
-      //  // Bildverarbeitung durchführen und Rechteckposition berechnen
-      //  var (x, y, width, height) = PerformImageProcessing(_currentFrame);
-
-      //  // Rechteckposition aktualisieren
-      //  RectangleDrawable.UpdateRectangle(x, y, width, height);
-
-      //  // GraphicsView aktualisieren
-      //  //OverlayGraphicsView.Invalidate();
-      //  Dispatcher.Dispatch(() => OverlayGraphicsView.Invalidate());
-      //}
+       _captureEvent.Set();
     }
 
     private byte[] ReadFromStream(Stream stream)

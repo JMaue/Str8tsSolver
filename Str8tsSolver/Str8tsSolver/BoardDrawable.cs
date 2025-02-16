@@ -1,6 +1,7 @@
 ﻿using Microsoft.Maui.Controls;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Drawing;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ namespace Str8tsSolver
     private Microsoft.Maui.Graphics.Point? _lowerRight;
 
     private int _counter = 0;
+    private string _message;
 
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
@@ -26,7 +28,8 @@ namespace Str8tsSolver
       canvas.FontSize = 20;
       var x = dirtyRect.X + dirtyRect.Width / 2;
       var y = dirtyRect.Y + dirtyRect.Height / 2;
-      canvas.DrawString(_counter.ToString(), x, y, HorizontalAlignment.Center);
+      var msg = _message == null || _message.Length == 0 ? _counter.ToString() : _message;
+      canvas.DrawString(msg, x, y, HorizontalAlignment.Center);
 
       if (_upperLeft == null || _upperRight == null || _lowerRight == null || _lowerLeft == null)
       {
@@ -62,6 +65,18 @@ namespace Str8tsSolver
       _upperRight = new Microsoft.Maui.Graphics.Point(corners[1].X * scaleX, corners[1].Y * scaleY);
       _lowerRight = new Microsoft.Maui.Graphics.Point(corners[2].X * scaleX, corners[2].Y * scaleY);
       _lowerLeft = new Microsoft.Maui.Graphics.Point(corners[3].X * scaleX, corners[3].Y * scaleY);
+
+      _message = string.Empty;
+    }
+ 
+    internal void InvalidatePosition (int counter, string msg = "")
+    {
+      _counter = counter;
+      _upperLeft = null;
+      _upperRight = null;
+      _lowerRight = null;
+      _lowerLeft = null;
+      _message = msg;
     }
   }
 }

@@ -7,19 +7,8 @@ using Point = System.Drawing.Point;
 
 namespace Str8tsSolverImageTools
 {
-  //public enum ShowIntermediateResults : Int16
-  //{
-  //  LabelCorner = 1,
-  //  CornerCycle = 2,
-  //  DrawAllContours = 4,
-  //  DrawRois = 8,
-  //  ShowOcrResults = 16
-  //}
-
   public class ContourFinder : IDisposable
   {
-    List<Point> _contour;
-
     public delegate void NumberDetectedHandler(int x, int y, char value);
     public event NumberDetectedHandler NumberDetected;
 
@@ -36,6 +25,7 @@ namespace Str8tsSolverImageTools
     public List<Point> FindExternalContour(byte[] rawBytes, out int width, out int height)
     {
       Mat? image = BytesArrayToMat(rawBytes);
+      //Mat image = CvInvoke.Imread(@"D:\Jens\Repositories\Str8tsSolver\Data\20250213_225501.jpg", ImreadModes.Color);
       width = image != null ? image.Width : 0;
       height = image != null ? image.Height : 0;
       return FindExternalContour(ref image);
@@ -46,9 +36,9 @@ namespace Str8tsSolverImageTools
       if (img == null)
         return new List<Point>();
 
-      var rc = new List<Point>();
-      var imgX = img.Rows;
-      var imgY = img.Cols;
+      var allContourCandidates = new List<List<Point>>();
+      var imgX = img.Cols;
+      var imgY = img.Rows;
       var minSquareSize = Math.Min(imgX, imgY) * 0.7;
 
       // convert image to gray
@@ -66,6 +56,8 @@ namespace Str8tsSolverImageTools
             CvInvoke.FindContours(cannyEdges, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
             for (int i = 0; i < contours.Size; i++)
             {
+              var contourCandidate = new List<Point>();
+
               using VectorOfPoint contour = contours[i];
               using VectorOfPoint approxContour = new VectorOfPoint();
               CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.08, true);
@@ -95,57 +87,47 @@ namespace Str8tsSolverImageTools
                     CvInvoke.Circle(img, point, d, new MCvScalar(0, 255, 0), 5);
                   }
 
-                  rc.Add(point);
+                  contourCandidate.Add(point);
                 }
-                if (rc.Count == 4)
-                  break;
+                if (contourCandidate.Count > 2)
+                  allContourCandidates.Add(contourCandidate);
               }
             }
           }
         }
       }
 
-      return FindCornerPoints(rc);
+      if (allContourCandidates.Count == 0)
+        return new List<Point>();
+
+      return FindCornerPoints(allContourCandidates[0]);
     }
 
     public List<Point> FindCornerPoints(List<Point> contour)
     {
-      if (contour.Count != 4)
+      if (contour.Count < 3)
         return new List<Point>();
 
-      Point upperLeft = new Point(0, 0);
-      Point upperRight = new Point(0, 0);
-      Point lowerLeft = new Point(0, 0);
-      Point lowerRight = new Point(0, 0);
+      var sf = new SquareFinder(contour);
+      return sf.GetValidSquare();
+    }
 
-      var minX = contour.Select(p => p.X).Min();
-      var maxX = contour.Select(p => p.X).Max();
-      var minY = contour.Select(p => p.Y).Min();
-      var maxY = contour.Select(p => p.Y).Max();
-      var meanX = (minX + maxX) / 2;
-      var meanY = (minY + maxY) / 2;
-      foreach (var point in contour)
-      {
-        if (point.X < meanX && point.Y < meanY)
-        {
-          upperLeft = point;
-        }
-        if (point.X > meanX && point.Y < meanY)
-        {
-          upperRight = point;
-        }
-        if (point.X < meanX && point.Y > meanY)
-        {
-          lowerLeft = point;
-        }
-        if (point.X > meanX && point.Y > meanY)
-        {
-          lowerRight = point;
-        }
-      }
+    private Point ValidateCorner(List<Point> cornerCandidates)
+    {
+      if (cornerCandidates.Count == 0)
+        return Point.Empty;
+      if (cornerCandidates.Count == 1)
+        return cornerCandidates[0];
 
-      _contour = new List<Point> { upperLeft, upperRight, lowerRight, lowerLeft };
-      return _contour;
+      float epsilon = 10;
+      var dXmax = cornerCandidates.Select(c => c.X).Max();
+      var dxMin = cornerCandidates.Select(c => c.X).Min();
+      var dYmax = cornerCandidates.Select(c => c.Y).Max();
+      var dyMin = cornerCandidates.Select(c => c.Y).Min();
+      if (dXmax - dxMin < epsilon && dYmax - dyMin < epsilon)
+        return cornerCandidates[0];
+
+      return Point.Empty;
     }
 
 
