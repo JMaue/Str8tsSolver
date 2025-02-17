@@ -21,7 +21,7 @@ namespace Str8tsSolver
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
       canvas.StrokeColor = Colors.Blue;
-      canvas.StrokeSize = 4;
+      canvas.StrokeSize = 2;
 
       // draw the _counter value as text
       canvas.FontColor = Colors.Black;

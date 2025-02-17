@@ -32,7 +32,7 @@ namespace Str8tsSolverImageTools
     }
 
     public List<Point> FindExternalContour(ref Mat? img)
-    {
+    { 
       if (img == null)
         return new List<Point>();
 

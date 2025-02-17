@@ -5,7 +5,6 @@ using System.IO;
 using System.Threading;
 using System.Timers;
 using Str8tsSolverImageTools;
-using System.Diagnostics.Metrics;
 
 namespace Str8tsSolver
 {
@@ -31,29 +30,35 @@ namespace Str8tsSolver
 
       MyCamera.MediaCaptured += MyCamera_MediaCaptured;
 
-      // Worker-Thread starten
+      StartCaptureThread();
+    }
+
+    private void StartCaptureThread()
+    {
       _cancellationTokenSource = new CancellationTokenSource();
       _captureThread = new Thread(() => CaptureImagesPeriodically(_cancellationTokenSource.Token))
       {
         Name = "CaptureThread"
       };
-      _captureThread.Start();
     }
 
     private async Task CaptureImagesPeriodically(CancellationToken token)
     {
-      Thread.Sleep(2000);
-
+      Thread.Sleep(10);
+      LogToFile($"Thread: CaptureImagesPeriodically started");
       _viewWidth = myView.Width;
       _viewHeight = myView.Height;
 
       while (!token.IsCancellationRequested)
       {
+        LogToFile($"Thread: CaptureImagesPeriodically ");
         MyCamera.CaptureImage(CancellationToken.None);
         _captureEvent.Reset();
         _captureEvent.WaitOne();
         Thread.Sleep(10);
       }
+
+      LogToFile($"Thread: CaptureImagesPeriodically ended");
     }
 
     protected async override void OnNavigatedTo(NavigatedToEventArgs args)
@@ -81,6 +86,7 @@ namespace Str8tsSolver
     {
       string currentThreadName = Thread.CurrentThread.Name;
       var bytes = ReadFromStream(e.Media);
+      LogToFile($"Thread: {currentThreadName} - Bytes: {bytes.Length} Counter {_counter}");
       if (bytes == null || bytes.Length == 0)
         return;
 
@@ -88,6 +94,7 @@ namespace Str8tsSolver
       try
       {
         var corners = _contourFinder.FindExternalContour(bytes, out int width, out int heigth);
+        LogToFile($"Thread: {currentThreadName} - Corners: {corners.Count}");
         if (corners.Count == 0)
         {
           myGraphics.InvalidatePosition(_counter);
@@ -95,6 +102,15 @@ namespace Str8tsSolver
         else
         {
           myGraphics.UpdatePosition(corners, _viewWidth, _viewHeight, width, heigth, _counter);
+          _cancellationTokenSource.Cancel();
+          myView.Invalidate();
+          _captureEvent.Set();
+
+          Dispatcher.Dispatch (() => {
+            EnableAnalyzeButton(true);
+            EnableScanButton(true);
+            ShowCapturedImage(bytes);
+          });
         }
       }
       catch (Exception ex)
@@ -103,6 +119,13 @@ namespace Str8tsSolver
       }
       myView.Invalidate();      
        _captureEvent.Set();
+    }
+
+    private void ShowCapturedImage(byte[] imageBytes)
+    {
+      MyCamera.IsVisible = false;
+      CapturedImage.IsVisible = true;
+      CapturedImage.Source = ImageSource.FromStream(() => new MemoryStream(imageBytes));
     }
 
     private byte[] ReadFromStream(Stream stream)
@@ -126,6 +149,43 @@ namespace Str8tsSolver
       }
       return null;
     }
-  }
 
+    private void OnScanButtonClicked(object sender, EventArgs e)
+    {
+      EnableScanButton(false);
+      EnableAnalyzeButton(false);
+      EnableSolveButton(false);
+
+      if (_captureThread.ThreadState == ThreadState.Stopped)
+      {
+        StartCaptureThread();
+      }
+      MyCamera.IsVisible = true;
+      CapturedImage.IsVisible = false;
+
+      _captureThread.Start();
+    }
+
+    private void OnAnalyzeButtonClicked(object sender, EventArgs e)
+    {
+      // Implement Analyze functionality
+    }
+
+    private void OnSolveButtonClicked(object sender, EventArgs e)
+    {
+      // Implement Solve functionality
+    }
+    public void EnableScanButton(bool isEnabled) => ScanButton.IsEnabled = isEnabled;
+    public void EnableAnalyzeButton(bool isEnabled) => AnalyzeButton.IsEnabled = isEnabled;
+    public void EnableSolveButton(bool isEnabled) => SolveButton.IsEnabled = isEnabled;
+  
+    public void LogToFile(string message)
+    {
+      return;
+
+      string path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+      string filename = Path.Combine(path, "log.txt");
+      File.AppendAllText(filename, message + Environment.NewLine);
+    }
+  }
 }

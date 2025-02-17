@@ -9,8 +9,14 @@
   </ContentPage.Resources>
   <ScrollView>
     <AbsoluteLayout>
-      <toolkit:CameraView x:Name="MyCamera" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" MediaCaptured="MyCamera_MediaCaptured" />
-      <GraphicsView x:Name="myView" Drawable="{StaticResource drawable}" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,1" HeightRequest="500"/>
+      <StackLayout AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,0.2" Orientation="Horizontal" HorizontalOptions="Center" VerticalOptions="Start">
+        <Button x:Name="ScanButton" Text="Scan" Clicked="OnScanButtonClicked"/>
+        <Button x:Name="AnalyzeButton" Text="Analyze" Clicked="OnAnalyzeButtonClicked"/>
+        <Button x:Name="SolveButton" Text="Solve" Clicked="OnSolveButtonClicked"/>
+      </StackLayout>      
+      <toolkit:CameraView x:Name="MyCamera" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0.2,1,0.8" MediaCaptured="MyCamera_MediaCaptured" />
+      <Image x:Name="CapturedImage" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0.2,1,0.8" IsVisible="False"/>
+      <GraphicsView x:Name="myView" Drawable="{StaticResource drawable}" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0.2,1,0.8" HeightRequest="500" IsVisible="True"/>
     </AbsoluteLayout>    
   </ScrollView>
 
