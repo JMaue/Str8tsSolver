@@ -38,19 +38,21 @@
       string imagePath13 = @"D:\Jens\Repositories\Str8tsSolver\Data\2024-01-12.png";
       string imagePath14 = @"D:\Jens\Repositories\Str8tsSolver\Data\20250213_225501.jpg";
 
-      var bf = new BoardFinder(@"..\data");
-      var grid = bf.ReadBoardFromImage(imagePath14);
-      bf.Dispose();
+      //var bf = new BoardFinder(@"..\data");
+      //var cf = new ContourFinder();
+      //var contour = cf.FindExternalContour(imagePath14);
+      //var grid = bf.(imagePath14);
+      //bf.Dispose();
 
-      var board = new Board (grid);
-      board.ReadBoard();
-      board.PrintBoard(true);
-      board.PositionSolved += (x, y, newValue) => Console.WriteLine($"Position {x},{y} solved with {newValue}");
+      //var board = new Board (grid);
+      //board.ReadBoard();
+      //board.PrintBoard(true);
+      //board.PositionSolved += (x, y, newValue) => Console.WriteLine($"Position {x},{y} solved with {newValue}");
 
-      var solved = Str8tsSolver.Solve(board, out int iterations);
-      var msg = solved ? "Solved" : "Not solved";
-      Console.WriteLine($"{msg} with {iterations} iterations");
-      board.PrintBoard();
+      //var solved = Str8tsSolver.Solve(board, out int iterations);
+      //var msg = solved ? "Solved" : "Not solved";
+      //Console.WriteLine($"{msg} with {iterations} iterations");
+      //board.PrintBoard();
     }
   }
 }

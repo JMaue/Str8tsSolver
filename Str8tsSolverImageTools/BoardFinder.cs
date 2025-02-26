@@ -1,10 +1,10 @@
-﻿using Emgu.CV.CvEnum;
-using Emgu.CV.Structure;
-using Emgu.CV.Util;
-using Emgu.CV;
-using System.Drawing;
-using Emgu.CV.OCR;
+﻿using System.Drawing;
 using System.Diagnostics;
+
+using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
+using Emgu.CV;
+using Emgu.CV.OCR;
 
 using Point = System.Drawing.Point;
 using Size = System.Drawing.Size;
@@ -96,126 +96,29 @@ namespace Str8tsSolverImageTools
       }
     }
 
-    public char[,] ReadBoardFromImage(string path)
+    public static char[,] FindBoard(byte[] rawBytes, List<Point> corners)
     {
-      _originalImage = CvInvoke.Imread(path, ImreadModes.Color);
-      var contour = FindExternalContour(ref _originalImage);
-      return Find81Fields(_originalImage, contour);
+      //Mat? image = BytesArrayToMat(rawBytes);
+      Mat image = CvInvoke.Imread(@"D:\Jens\Repositories\Str8tsSolver\Data\20250106_191616.jpg", ImreadModes.Color);
+      if (image == null)
+        return new char[0, 0];
+
+      var bf = new BoardFinder("");
+      return bf.Find81Fields(image, corners);
     }
 
-    public List<Point> FindExternalContour(string file)
+    public static Mat? BytesArrayToMat(byte[] rawBytes)
     {
-      Mat image = CvInvoke.Imread(file, ImreadModes.Color);
-      return FindExternalContour(ref image);
-    }
-
-    public List<Point> FindExternalContour(ref Mat img)
-    {
-      _originalImage = img;
-      var rc = new List<Point>();
-      var imgX = img.Rows;
-      var imgY = img.Cols;
-      var minSquareSize = Math.Min(imgX, imgY) * 0.7;
-
-      // convert image to gray
-      using (Mat gray = new Mat())
-      {
-        CvInvoke.CvtColor(img, gray, ColorConversion.Bgr2Gray);
-        var graySmooth = gray.ToImage<Gray, byte>().SmoothGaussian(5, 5, 1.5, 1.5);
-
-        // detect edges using the Canny-Algorithm 
-        using (Mat cannyEdges = new Mat())
-        {
-          CvInvoke.Canny(graySmooth, cannyEdges, 50, 150);
-          using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
-          {
-            CvInvoke.FindContours(cannyEdges, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
-            for (int i = 0; i < contours.Size; i++)
-            {
-              using VectorOfPoint contour = contours[i];
-              using VectorOfPoint approxContour = new VectorOfPoint();
-              CvInvoke.ApproxPolyDP(contour, approxContour, CvInvoke.ArcLength(contour, true) * 0.08, true);
-
-              // check if contour has the expected minimal size (70% of the image size)
-              var maxX = 0;
-              var maxY = 0;
-              var minX = imgX;
-              var minY = imgY;
-              foreach (var point in approxContour.ToArray())
-              {
-                maxX = Math.Max(maxX, point.X);
-                maxY = Math.Max(maxY, point.Y);
-                minX = Math.Min(minX, point.X);
-                minY = Math.Min(minY, point.Y);
-              }
-              if (maxX - minX >= minSquareSize && maxY - minY >= minSquareSize)
-              {
-                if ((ShowIntermediates & (Int16)ShowIntermediateResults.DrawAllContours) != 0)
-                  CvInvoke.DrawContours(img, contours, i, new MCvScalar(0, 0, 255), 2);
-
-                foreach (var point in approxContour.ToArray())
-                {
-                  if ((ShowIntermediates & (Int16) ShowIntermediateResults.CornerCycle) != 0)
-                  {
-                    var d = imgY > 1000 ? 15 : 5;
-                    CvInvoke.Circle(img, point, d, new MCvScalar(0, 255, 0), 5);
-                  }
-
-                  rc.Add(point);
-                }
-                if (rc.Count == 4)
-                  break;
-              }
-            }
-          }
-        }
-      }
-
-      return FindCornerPoints(rc);
-    }
-
-    public List<Point> FindCornerPoints(List<Point> contour)
-    {
-      Point upperLeft = new Point(0, 0);
-      Point upperRight = new Point(0, 0);
-      Point lowerLeft = new Point(0, 0);
-      Point lowerRight = new Point(0, 0);
-
-      var minX = contour.Select(p => p.X).Min();
-      var maxX = contour.Select(p => p.X).Max();
-      var minY = contour.Select(p => p.Y).Min();
-      var maxY = contour.Select(p => p.Y).Max();
-      var meanX = (minX + maxX) / 2;
-      var meanY = (minY + maxY) / 2;
-      foreach (var point in contour)
-      {
-        if (point.X < meanX && point.Y < meanY)
-        {
-          upperLeft = point;
-        }
-        if (point.X > meanX && point.Y < meanY)
-        {
-          upperRight = point;
-        }
-        if (point.X < meanX && point.Y > meanY)
-        {
-          lowerLeft = point;
-        }
-        if (point.X > meanX && point.Y > meanY)
-        {
-          lowerRight = point;
-        }
-      }
-
-      _contour = new List<Point> { upperLeft, upperRight, lowerRight, lowerLeft };
-      return _contour;
+      Mat mat = new Mat();
+      CvInvoke.Imdecode(rawBytes, ImreadModes.Color, mat);
+      return mat;
     }
 
     public char[,] Find81Fields(Mat originalImage, List<Point> contour)
     {
       var board = new char[9, 9];
 
-      var corners = FindCornerPoints(contour);
+      var corners = contour;
       var isScreenShot = IsScreenShot(contour);
       Point upperLeft = corners[0];
       Point upperRight = corners[1];
@@ -502,7 +405,7 @@ namespace Str8tsSolverImageTools
 
     private char ExtractDigitsFromImage(Mat img, int r, int c, bool black)
     {
-      bool Validate (Tesseract.Word word) 
+      bool Validate(Tesseract.Word word)
       {
         return word.Confident > 33 && word.Text.Trim().Length == 1 && word.Region.Height > img.Height * 0.4;
       }
@@ -532,11 +435,10 @@ namespace Str8tsSolverImageTools
 
     public bool IsScreenShot(List<Point> contour)
     {
-      var corners = FindCornerPoints(contour);
-      Point upperLeft = corners[0];
-      Point upperRight = corners[1];
-      Point lowerRight = corners[2];
-      Point lowerLeft = corners[3];
+      Point upperLeft = contour[0];
+      Point upperRight = contour[1];
+      Point lowerRight = contour[2];
+      Point lowerLeft = contour[3];
 
       return upperLeft.Y == upperRight.Y && lowerLeft.Y == lowerRight.Y && upperLeft.X == lowerLeft.X && upperRight.X == lowerRight.X;
     }
@@ -581,7 +483,7 @@ namespace Str8tsSolverImageTools
 
     public void DrawSadSmiley()
     {
-      var corners = FindCornerPoints(_contour);
+      var corners = _contour;
     
       Point upperLeft = corners[0];
       Point upperRight = corners[1];

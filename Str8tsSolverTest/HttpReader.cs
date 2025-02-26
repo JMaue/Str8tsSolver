@@ -10,7 +10,7 @@ namespace Str8tsSolverTest
   internal class HttpReader
   {
     private HttpClient _httpClient;
-    private IBrowser _browser = null;
+    private PuppeteerSharp.IBrowser _browser = null;
     public HttpReader()
     {
       var uri = "https://www.str8ts.com/feed/derwesten/";

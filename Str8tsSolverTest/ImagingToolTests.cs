@@ -31,7 +31,8 @@ namespace Str8tsSolverTest
     [TestCaseSource(nameof(GetTestFiles))]
     public void ContourFinderTest(string file)
     {
-      var contour = _boardFinder.FindExternalContour(file);
+      var cf = new ContourFinder();
+      var contour = cf.FindExternalContour(file);
       var count = contour.Count();
       var msg = $"File: {file}: found {count} corner points";
       if (count != 4)
@@ -43,7 +44,8 @@ namespace Str8tsSolverTest
     [TestCaseSource(nameof(GetTestFiles))]
     public void IsScreenshotTest(string file)
     {
-      var contour = _boardFinder.FindExternalContour(file);
+      var cf = new ContourFinder();
+      var contour = cf.FindExternalContour(file);
       bool isScreenshot = _boardFinder.IsScreenShot(contour);
       Assert.AreEqual(file.Contains("ex"), isScreenshot);
     }
