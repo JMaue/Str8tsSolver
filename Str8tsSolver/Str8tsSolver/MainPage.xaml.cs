@@ -24,6 +24,8 @@ namespace Str8tsSolver
     private ContourFinder _contourFinder;
 
     private byte[] _stream;
+    private OcrResult _ocrResult;
+    private OcrOptions _ocrOptions;
     private List<System.Drawing.Point> _corners;
 
     public MainPage(ICameraProvider cp)
@@ -33,6 +35,10 @@ namespace Str8tsSolver
       _contourFinder = new ContourFinder();
 
       MyCamera.MediaCaptured += MyCamera_MediaCaptured;
+
+      var builder = new OcrOptions.Builder();
+      //builder.AddPatternConfig(new OcrPatternConfig("[0..9]"));
+      _ocrOptions = builder.Build(); 
 
       StartCaptureThread();
     }
@@ -111,15 +117,26 @@ namespace Str8tsSolver
         }
         else
         {
-          myGraphics.UpdatePosition(corners, _viewWidth, _viewHeight, width, heigth, _counter);
+          
           _cancellationTokenSource.Cancel();
           myView.Invalidate();
           _captureEvent.Set();
 
+          OcrResult ocrResult = null;
+          Task.Run(async () =>
+          {
+            ocrResult = await OcrPlugin.Default.RecognizeTextAsync(bytes, _ocrOptions);
+          }).Wait();
+
+          if (ocrResult != null && ocrResult.Success && ocrResult.Elements.Count > 0)
+          {
+            _ocrResult = ocrResult;
+          }
           _stream = bytes;
           _corners = corners;
+          myGraphics.UpdatePosition(corners, _viewWidth, _viewHeight, width, heigth, _counter, _ocrResult);
 
-          Dispatcher.Dispatch (() => {
+          Dispatcher.Dispatch(() => {
             EnableAnalyzeButton(true);
             EnableScanButton(true);
             ShowCapturedImage(bytes);
@@ -130,14 +147,15 @@ namespace Str8tsSolver
       {
         myGraphics.InvalidatePosition(_counter, ex.Message);
       }
-      myView.Invalidate();      
-       _captureEvent.Set();
+      myView.Invalidate();
+      _captureEvent.Set();
     }
 
     private void ShowCapturedImage(byte[] imageBytes)
     {
       MyCamera.IsVisible = false;
       CapturedImage.IsVisible = true;
+
       CapturedImage.Source = ImageSource.FromStream(() => new MemoryStream(imageBytes));
     }
 
