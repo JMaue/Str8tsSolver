@@ -1,4 +1,6 @@
-﻿namespace Str8tsSolver.Droid
+﻿using Plugin.Maui.OCR;
+
+namespace Str8tsSolver.Droid
 {
   public static class MauiProgram
   {
@@ -7,8 +9,10 @@
       var builder = MauiApp.CreateBuilder();
 
       builder
-        .UseSharedMauiApp();
+        .UseSharedMauiApp()
+        .UseOcr();
 
+      builder.Services.AddSingleton<IOcrService>(OcrPlugin.Default);
       return builder.Build();
     }
   }

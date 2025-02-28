@@ -4,10 +4,11 @@ using System.Diagnostics;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV;
-using Emgu.CV.OCR;
 
 using Point = System.Drawing.Point;
 using Size = System.Drawing.Size;
+using Plugin.Maui.OCR;
+//using Plugin.Maui.OCR.OcrResult;
 
 namespace Str8tsSolverImageTools
 {
@@ -24,7 +25,8 @@ namespace Str8tsSolverImageTools
   {
     private readonly string _dataFolder;
 
-    Tesseract? _ocr = null;
+    //Tesseract? _ocr = null;
+    //Plugin.Maui.OCR? _ocr = null;
 
     // bottom left coordinates of each of the 9x9 grid cells to write the solution in the OnSolved callback
     readonly Point[,] _points = new Point[9, 9];
@@ -44,66 +46,67 @@ namespace Str8tsSolverImageTools
 
     public void Dispose()
     {
-      _ocr?.Dispose();
+      //_ocr?.Dispose();
     }
 
     public Int16 ShowIntermediates { get; set; } = 0;
 
-    private static void TesseractDownloadLangFile(String folder, String lang)
-    {
-      //String subfolderName = "tessdata";
-      //String folderName = System.IO.Path.Combine(folder, subfolderName);
-      String folderName = folder;
-      if (!Directory.Exists(folderName))
-      {
-        Directory.CreateDirectory(folderName);
-      }
-      String dest = Path.Combine(folderName, $"{lang}.traineddata");
-      if (!File.Exists(dest))
-        using (System.Net.WebClient webclient = new System.Net.WebClient())
-        {
-          String source = Tesseract.GetLangFileUrl(lang);
+    //private static void TesseractDownloadLangFile(String folder, String lang)
+    //{
+    //  //String subfolderName = "tessdata";
+    //  //String folderName = System.IO.Path.Combine(folder, subfolderName);
+    //  String folderName = folder;
+    //  if (!Directory.Exists(folderName))
+    //  {
+    //    Directory.CreateDirectory(folderName);
+    //  }
+    //  String dest = Path.Combine(folderName, $"{lang}.traineddata");
+    //  if (!File.Exists(dest))
+    //    using (System.Net.WebClient webclient = new System.Net.WebClient())
+    //    {
+    //      String source = Tesseract.GetLangFileUrl(lang);
 
-          Trace.WriteLine($"Downloading file from '{source}' to '{dest}'");
-          webclient.DownloadFile(source, dest);
-          Trace.WriteLine("Download completed");
-        }
-    }
+    //      Trace.WriteLine($"Downloading file from '{source}' to '{dest}'");
+    //      webclient.DownloadFile(source, dest);
+    //      Trace.WriteLine("Download completed");
+    //    }
+    //}
 
-    private bool InitOcr(String path, String lang, OcrEngineMode mode)
-    {
+    //private bool InitOcr(String path, String lang, OcrEngineMode mode)
+    //{
 
-      try
-      {
-        _ocr?.Dispose();
-        _ocr = null;
+    //  try
+    //  {
+    //    _ocr?.Dispose();
+    //    _ocr = null;
 
-        if (String.IsNullOrEmpty(path))
-          path = Tesseract.DefaultTesseractDirectory;
+    //    if (String.IsNullOrEmpty(path))
+    //      path = Tesseract.DefaultTesseractDirectory;
 
-        TesseractDownloadLangFile(path, lang);
-        TesseractDownloadLangFile(path, "osd"); //script orientation detection
+    //    TesseractDownloadLangFile(path, lang);
+    //    TesseractDownloadLangFile(path, "osd"); //script orientation detection
 
-        _ocr = new Tesseract(path, lang, mode);
-        _ocr.SetVariable("tessedit_char_whitelist", "123456789");
+    //    _ocr = new Tesseract(path, lang, mode);
+    //    _ocr.SetVariable("tessedit_char_whitelist", "123456789");
 
-        return true;
-      }
-      catch (Exception e)
-      {
-        _ocr = null;
-        return false;
-      }
-    }
+    //    return true;
+    //  }
+    //  catch (Exception e)
+    //  {
+    //    _ocr = null;
+    //    return false;
+    //  }
+    //}
 
     public static char[,] FindBoard(byte[] rawBytes, List<Point> corners)
     {
       //Mat? image = BytesArrayToMat(rawBytes);
-      Mat image = CvInvoke.Imread(@"D:\Jens\Repositories\Str8tsSolver\Data\20250106_191616.jpg", ImreadModes.Color);
+      Mat image = CvInvoke.Imread(@"D:\Jens\Repositories\Str8tsSolver\Data\ex9.png", ImreadModes.Color);
       if (image == null)
         return new char[0, 0];
 
       var bf = new BoardFinder("");
+      var c = bf.ExtractDigitsFromFile(@"D:\Jens\Repositories\Str8tsSolver\Data\ex9.png");
       return bf.Find81Fields(image, corners);
     }
 
@@ -117,7 +120,7 @@ namespace Str8tsSolverImageTools
     public char[,] Find81Fields(Mat originalImage, List<Point> contour)
     {
       var board = new char[9, 9];
-
+      
       var corners = contour;
       var isScreenShot = IsScreenShot(contour);
       Point upperLeft = corners[0];
@@ -136,7 +139,7 @@ namespace Str8tsSolverImageTools
       using (var grayImage = new Mat())
       {
         CvInvoke.CvtColor(originalImage, grayImage, ColorConversion.Bgr2Gray);
-
+        var x = ExtractDigitsFromImage(grayImage, 0, 0, true);
         (bool[,] blackValues, int average, int avgBlack, int avgWhite) =
           CalcBlackWhiteMatrix(grayImage, upperLeft, upperRight, lowerLeft, lowerRight);
 
@@ -183,7 +186,7 @@ namespace Str8tsSolverImageTools
             var isBlack = blackValues[r, c];
             using (Mat roi = new Mat(grayImage, rect))
             {
-              SaveRegionToFile(roi, $"{r}{c}.png");
+              //SaveRegionToFile(roi, $"{r}{c}.png");
 
               board[r, c] = isBlack ? '#' : ' ';
               digit = isBlack
@@ -372,62 +375,194 @@ namespace Str8tsSolverImageTools
       SaveRegionToFile(histImage, $"{r}{c}h.png");
     }
 
-    public void SaveRegionToFile(Mat roi, string filename)
+    public string SaveRegionToFile(Mat roi, string filename)
     {
-#if DEBUG
-      CvInvoke.Imwrite(Path.Combine(_dataFolder, filename), roi);
-#endif
+      var fn = Path.Combine(FileSystem.CacheDirectory, filename);
+      CvInvoke.Imwrite(fn, roi);
+      return fn;
     }
 
-    public string Stream2File(Stream stream)
-    {
-      var fn = "stream.png";
-      using (var memoryStream = new MemoryStream())
-      {
-        try
-        {
-          stream.CopyTo(memoryStream);
-          byte[] data = memoryStream.ToArray();
-          Mat mat = new Mat();
-          CvInvoke.Imdecode(data, ImreadModes.Color, mat);
-          CvInvoke.Circle(mat, new Point(100, 100), 50, new MCvScalar(0, 0, 255), 2);
-          SaveRegionToFile(mat, fn);
-          return fn;
-        }
-        catch (Exception ex)
-        {
-          Console.WriteLine(ex.Message);
-          return "";
-        }
+    //public string Stream2File(Stream stream)
+    //{
+    //  var fn = "stream.png";
+    //  using (var memoryStream = new MemoryStream())
+    //  {
+    //    try
+    //    {
+    //      stream.CopyTo(memoryStream);
+    //      byte[] data = memoryStream.ToArray();
+    //      Mat mat = new Mat();
+    //      CvInvoke.Imdecode(data, ImreadModes.Color, mat);
+    //      CvInvoke.Circle(mat, new Point(100, 100), 50, new MCvScalar(0, 0, 255), 2);
+    //      SaveRegionToFile(mat, fn);
+    //      return fn;
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //      Console.WriteLine(ex.Message);
+    //      return "";
+    //    }
 
+    //  }
+    //}
+
+    //private Stream Mat2Stream (Mat img)
+    //{
+    //  var stream = new MemoryStream();
+    //  var bytes = img.ToImage<Gray, byte>();
+    //  var xx = bytes.ToBitmap();
+    //  xx.Save(stream, System.Drawing.Imaging.ImageFormat.Bmp);
+    //  stream.Position = 0;
+    //  return stream;
+    //}
+    /// <summary>
+    /// Converts an Emgu CV Mat to a memory stream using the specified image format
+    /// </summary>
+    /// <param name="mat">The source Mat object</param>
+    /// <param name="format">The image format to encode (default is .jpg)</param>
+    /// <param name="quality">The quality parameter (0-100) for formats that support it</param>
+    /// <returns>A MemoryStream containing the encoded image data</returns>
+    public static Stream MatToStream(Emgu.CV.Mat mat, string format = ".jpg", int quality = 100)
+    {
+      if (mat == null || mat.IsEmpty)
+        throw new ArgumentException("Mat cannot be null or empty", nameof(mat));
+
+      // Create a vector to store the encoded image data
+      using (Emgu.CV.Util.VectorOfByte vectorOfByte = new Emgu.CV.Util.VectorOfByte())
+      {
+        // Define encoding parameters based on format
+        Emgu.CV.CvEnum.ImwriteFlags encodingFlag = Emgu.CV.CvEnum.ImwriteFlags.JpegQuality;
+        if (format.ToLower() == ".png")
+          encodingFlag = Emgu.CV.CvEnum.ImwriteFlags.PngCompression;
+
+        // Encode the image with quality parameter
+        Emgu.CV.CvInvoke.Imencode(
+            format,
+            mat,
+            vectorOfByte,
+            new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>[]
+            {
+                new KeyValuePair<Emgu.CV.CvEnum.ImwriteFlags, int>(encodingFlag, quality)
+            }
+        );
+
+        // Convert to memory stream
+        byte[] buffer = vectorOfByte.ToArray();
+        MemoryStream stream = new MemoryStream(buffer);
+        stream.Position = 0; // Reset position to beginning of stream
+
+        return stream;
       }
     }
 
     private char ExtractDigitsFromImage(Mat img, int r, int c, bool black)
     {
-      bool Validate(Tesseract.Word word)
+      bool Validate(OcrResult.OcrElement word)
       {
-        return word.Confident > 33 && word.Text.Trim().Length == 1 && word.Region.Height > img.Height * 0.4;
+        return word.Confidence > 33 && word.Text.Trim().Length == 1 && word.Height > img.Height * 0.4;
       }
 
-      if (_ocr == null)
-        InitOcr(Tesseract.DefaultTesseractDirectory, "eng", OcrEngineMode.TesseractOnly);
+      var fn = SaveRegionToFile(img, $"{r}{c}.png");
+      var fr = new FileResult(fn);
+      //if (_ocr == null)
+      //  InitOcr(Tesseract.DefaultTesseractDirectory, "eng", OcrEngineMode.TesseractOnly);
 
-      _ocr.SetImage(img);
-      _ocr.Recognize();
-
-      var words = _ocr.GetWords();
-      if (words != null)
+      //_ocr.SetImage(img);
+      //_ocr.Recognize();
+      //using var stream = MatToStream(img);
+      //var imgAsBytes = new byte[stream.Length];
+      //var bi = img.ToImage<Gray, byte>();
+      OcrResult ocrResult = null;
+      Task.Run (async () =>
       {
-        var hit = words.FirstOrDefault(Validate);
-        if (!hit.Equals(null) && hit.Text != null)
+        try
         {
-          var color = black ? new MCvScalar(222, 222, 222) : new MCvScalar(0, 0, 0);
-          CvInvoke.PutText(img, $"{(int)hit.Confident}", new Point(3, img.Height - 3), FontFace.HersheyPlain, 4, color, 4);
-          CvInvoke.Rectangle(img, hit.Region, color, 1);
-          SaveRegionToFile(img, $"{r}{c}v.png");
+          using var imageAsStream = await fr.OpenReadAsync();
+          var imageAsBytes = new byte[imageAsStream.Length];
+          await imageAsStream.ReadAsync(imageAsBytes);
 
-          return hit.Text[0];
+          //var bytes = await stream.ReadAsync(imgAsBytes);
+          ocrResult = await OcrPlugin.Default.RecognizeTextAsync(imageAsBytes);
+        }
+        catch (Exception ex)
+        {
+          Debug.WriteLine(ex.Message);
+          //await stream.ReadAsync(imgAsBytes);
+          //ocrResult = await OcrPlugin.Default.RecognizeTextAsync(bi.Bytes, true);
+        }
+      }).Wait();
+
+      if (ocrResult.Success)
+      {
+        var elements = ocrResult.Elements;
+        if (elements != null && elements.Count > 0)
+        {
+          var hit = elements.FirstOrDefault(Validate);
+          if (hit != null && hit.Text != null)
+          {
+            //var color = black ? new MCvScalar(222, 222, 222) : new MCvScalar(0, 0, 0);
+            //CvInvoke.PutText(img, $"{(int)hit.Confidence}", new Point(3, img.Height - 3), FontFace.HersheyPlain, 4, color, 4);
+            //CvInvoke.Rectangle(img, hit.Region, color, 1);
+            //SaveRegionToFile(img, $"{r}{c}v.png");
+
+            return hit.Text[0];
+          }
+        }
+      }
+      return ' ';
+    }
+
+    private char ExtractDigitsFromFile(string fn)
+    {
+      bool Validate(OcrResult.OcrElement word)
+      {
+        return true; // word.Confidence > 33 && word.Text.Trim().Length == 1 && word.Height > img.Height * 0.4;
+      }
+
+      var fr = new FileResult(fn, "image/png");
+      //if (_ocr == null)
+      //  InitOcr(Tesseract.DefaultTesseractDirectory, "eng", OcrEngineMode.TesseractOnly);
+
+      //_ocr.SetImage(img);
+      //_ocr.Recognize();
+      //using var stream = MatToStream(img);
+      //var imgAsBytes = new byte[stream.Length];
+      //var bi = img.ToImage<Gray, byte>();
+      OcrResult ocrResult = null;
+      Task.Run(async () =>
+      {
+        try
+        {
+          using var imageAsStream = await fr.OpenReadAsync();
+          var imageAsBytes = new byte[imageAsStream.Length];
+          await imageAsStream.ReadAsync(imageAsBytes);
+
+          //var bytes = await stream.ReadAsync(imgAsBytes);
+          ocrResult = await OcrPlugin.Default.RecognizeTextAsync(imageAsBytes);
+        }
+        catch (Exception ex)
+        {
+          Debug.WriteLine(ex.Message);
+          //await stream.ReadAsync(imgAsBytes);
+          //ocrResult = await OcrPlugin.Default.RecognizeTextAsync(bi.Bytes, true);
+        }
+      }).Wait();
+
+      if (ocrResult.Success)
+      {
+        var elements = ocrResult.Elements;
+        if (elements != null && elements.Count > 0)
+        {
+          var hit = elements.FirstOrDefault(Validate);
+          if (hit != null && hit.Text != null)
+          {
+            //var color = black ? new MCvScalar(222, 222, 222) : new MCvScalar(0, 0, 0);
+            //CvInvoke.PutText(img, $"{(int)hit.Confidence}", new Point(3, img.Height - 3), FontFace.HersheyPlain, 4, color, 4);
+            //CvInvoke.Rectangle(img, hit.Region, color, 1);
+            //SaveRegionToFile(img, $"{r}{c}v.png");
+
+            return hit.Text[0];
+          }
         }
       }
       return ' ';

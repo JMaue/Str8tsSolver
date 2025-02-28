@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 using System.Timers;
 using Str8tsSolverImageTools;
+using Plugin.Maui.OCR;
 
 namespace Str8tsSolver
 {
@@ -22,6 +23,9 @@ namespace Str8tsSolver
 
     private ContourFinder _contourFinder;
 
+    private byte[] _stream;
+    private List<System.Drawing.Point> _corners;
+
     public MainPage(ICameraProvider cp)
     {
       InitializeComponent();
@@ -31,6 +35,12 @@ namespace Str8tsSolver
       MyCamera.MediaCaptured += MyCamera_MediaCaptured;
 
       StartCaptureThread();
+    }
+
+    protected async override void OnAppearing()
+    {
+      base.OnAppearing();
+      await OcrPlugin.Default.InitAsync();
     }
 
     private void StartCaptureThread()
@@ -106,6 +116,9 @@ namespace Str8tsSolver
           myView.Invalidate();
           _captureEvent.Set();
 
+          _stream = bytes;
+          _corners = corners;
+
           Dispatcher.Dispatch (() => {
             EnableAnalyzeButton(true);
             EnableScanButton(true);
@@ -165,10 +178,53 @@ namespace Str8tsSolver
 
       _captureThread.Start();
     }
+    private void OnOpenButtonClicked(object sender, EventArgs e)
+    {
+      EnableScanButton(false);
+      EnableAnalyzeButton(false);
+      EnableSolveButton(false);
+      Task.Run(async () =>
+      {
+        try
+        {
+          var pickResult = await MediaPicker.Default.PickPhotoAsync();
+
+          if (pickResult != null)
+          {
+            using var imageAsStream = await pickResult.OpenReadAsync();
+            var imageAsBytes = new byte[imageAsStream.Length];
+            await imageAsStream.ReadAsync(imageAsBytes);
+
+            //var options = new OcrOptions (new List<OcrLanguage> { OcrLanguage.English });
+            //options.PatternConfigs.Add(new OcrPatternConfig("\d",
+
+            var ocrResult = await OcrPlugin.Default.RecognizeTextAsync(imageAsBytes, true);
+
+            if (!ocrResult.Success)
+            {
+              Dispatcher.Dispatch (() => DisplayAlert("No success", "No OCR possible", "OK"));
+              return;
+            }
+
+            Dispatcher.Dispatch(() => DisplayAlert("OCR Result", ocrResult.AllText, "OK"));
+          }
+        }
+        catch (Exception ex)
+        {
+          await DisplayAlert("Error", ex.Message, "OK");
+        }
+      }
+    );
+        
+      MyCamera.IsVisible = false;
+      CapturedImage.IsVisible = true;
+
+      _captureThread.Start();
+    }
 
     private void OnAnalyzeButtonClicked(object sender, EventArgs e)
     {
-      // Implement Analyze functionality
+      var board = BoardFinder.FindBoard(_stream, _corners);
     }
 
     private void OnSolveButtonClicked(object sender, EventArgs e)

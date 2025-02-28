@@ -10,6 +10,7 @@
   <ScrollView>
     <AbsoluteLayout>
       <StackLayout AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,0.2" Orientation="Horizontal" HorizontalOptions="Center" VerticalOptions="Start">
+        <Button x:Name="OpenButton" Text="Open" Clicked="OnOpenButtonClicked"/>
         <Button x:Name="ScanButton" Text="Scan" Clicked="OnScanButtonClicked"/>
         <Button x:Name="AnalyzeButton" Text="Analyze" Clicked="OnAnalyzeButtonClicked"/>
         <Button x:Name="SolveButton" Text="Solve" Clicked="OnSolveButtonClicked"/>
