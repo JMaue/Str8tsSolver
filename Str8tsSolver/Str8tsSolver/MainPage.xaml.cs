@@ -1,9 +1,5 @@
 ﻿using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Core.Primitives;
-using Microsoft.Maui.Graphics;
-using System.IO;
-using System.Threading;
-using System.Timers;
 using Str8tsSolverImageTools;
 using Plugin.Maui.OCR;
 
@@ -20,6 +16,9 @@ namespace Str8tsSolver
 
     private double _viewWidth;
     private double _viewHeight;
+
+    private int _imgWidth;
+    private int _imgHeight;
 
     private ContourFinder _contourFinder;
 
@@ -40,16 +39,18 @@ namespace Str8tsSolver
       //builder.AddPatternConfig(new OcrPatternConfig("[0..9]"));
       _ocrOptions = builder.Build(); 
 
-      StartCaptureThread();
+      CreateCaptureThread();
     }
 
     protected async override void OnAppearing()
     {
       base.OnAppearing();
+      _viewWidth = myView.Width;
+      _viewHeight = myView.Height;
       await OcrPlugin.Default.InitAsync();
     }
 
-    private void StartCaptureThread()
+    private void CreateCaptureThread()
     {
       _cancellationTokenSource = new CancellationTokenSource();
       _captureThread = new Thread(() => CaptureImagesPeriodically(_cancellationTokenSource.Token))
@@ -64,7 +65,6 @@ namespace Str8tsSolver
       LogToFile($"Thread: CaptureImagesPeriodically started");
       _viewWidth = myView.Width;
       _viewHeight = myView.Height;
-
       while (!token.IsCancellationRequested)
       {
         LogToFile($"Thread: CaptureImagesPeriodically ");
@@ -109,15 +109,14 @@ namespace Str8tsSolver
       _counter++;
       try
       {
-        var corners = _contourFinder.FindExternalContour(bytes, out int width, out int heigth);
+        var corners = _contourFinder.FindExternalContour(bytes, out _imgWidth, out _imgHeight);
         LogToFile($"Thread: {currentThreadName} - Corners: {corners.Count}");
         if (corners.Count == 0)
         {
           myGraphics.InvalidatePosition(_counter);
         }
         else
-        {
-          
+        {       
           _cancellationTokenSource.Cancel();
           myView.Invalidate();
           _captureEvent.Set();
@@ -134,7 +133,7 @@ namespace Str8tsSolver
           }
           _stream = bytes;
           _corners = corners;
-          myGraphics.UpdatePosition(corners, _viewWidth, _viewHeight, width, heigth, _counter, _ocrResult);
+          myGraphics.UpdatePosition(corners, _viewWidth, _viewHeight, _imgWidth, _imgHeight, _counter, _ocrResult);
 
           Dispatcher.Dispatch(() => {
             EnableAnalyzeButton(true);
@@ -189,7 +188,7 @@ namespace Str8tsSolver
 
       if (_captureThread.ThreadState == ThreadState.Stopped)
       {
-        StartCaptureThread();
+        CreateCaptureThread();
       }
       MyCamera.IsVisible = true;
       CapturedImage.IsVisible = false;
@@ -198,57 +197,61 @@ namespace Str8tsSolver
     }
     private void OnOpenButtonClicked(object sender, EventArgs e)
     {
+      _viewWidth = myView.Width;
+      _viewHeight = myView.Height;
       EnableScanButton(false);
       EnableAnalyzeButton(false);
       EnableSolveButton(false);
+      byte[] imageAsBytes = null;
       Task.Run(async () =>
       {
         try
         {
           var pickResult = await MediaPicker.Default.PickPhotoAsync();
-
           if (pickResult != null)
           {
             using var imageAsStream = await pickResult.OpenReadAsync();
             var imageAsBytes = new byte[imageAsStream.Length];
-            await imageAsStream.ReadAsync(imageAsBytes);
-
-            //var options = new OcrOptions (new List<OcrLanguage> { OcrLanguage.English });
-            //options.PatternConfigs.Add(new OcrPatternConfig("\d",
-
-            var ocrResult = await OcrPlugin.Default.RecognizeTextAsync(imageAsBytes, true);
-
-            if (!ocrResult.Success)
+            Task.Run(async () => await imageAsStream.ReadAsync(imageAsBytes)).Wait();
+            var corners = _contourFinder.FindExternalContour(imageAsBytes, out int width, out int heigth);
+            if (corners.Count > 0)
             {
-              Dispatcher.Dispatch (() => DisplayAlert("No success", "No OCR possible", "OK"));
-              return;
+              var ocrResult = await OcrPlugin.Default.RecognizeTextAsync(imageAsBytes, _ocrOptions);
+              if (ocrResult != null && ocrResult.Success && ocrResult.Elements.Count > 0)
+              {
+                _ocrResult = ocrResult;
+              }
+              _stream = imageAsBytes;
+              _corners = corners;
+              Dispatcher.Dispatch(() => { ShowCapturedImage(imageAsBytes); });
+              myGraphics.UpdatePosition(corners, _viewWidth, _viewHeight, width, heigth, _counter, _ocrResult);
+              myView.Invalidate();
             }
-
-            Dispatcher.Dispatch(() => DisplayAlert("OCR Result", ocrResult.AllText, "OK"));
           }
         }
         catch (Exception ex)
         {
           await DisplayAlert("Error", ex.Message, "OK");
         }
-      }
-    );
-        
+      });
+
       MyCamera.IsVisible = false;
       CapturedImage.IsVisible = true;
 
-      _captureThread.Start();
+      //_captureThread.Start();
     }
 
-    private void OnAnalyzeButtonClicked(object sender, EventArgs e)
+    private void OnAnalyzeButtonClicked(object sender, EventArgs args)
     {
-      var board = BoardFinder.FindBoard(_stream, _corners);
+      var elements = OcrResultValidation.GetValidElements(_ocrResult, _imgWidth, _imgHeight);
+      var board = BoardFinder.FindBoard(_stream, _corners, elements);
     }
 
     private void OnSolveButtonClicked(object sender, EventArgs e)
     {
       // Implement Solve functionality
     }
+
     public void EnableScanButton(bool isEnabled) => ScanButton.IsEnabled = isEnabled;
     public void EnableAnalyzeButton(bool isEnabled) => AnalyzeButton.IsEnabled = isEnabled;
     public void EnableSolveButton(bool isEnabled) => SolveButton.IsEnabled = isEnabled;

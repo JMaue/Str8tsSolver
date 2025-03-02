@@ -97,7 +97,7 @@ namespace Str8tsSolver
 
       _message = string.Empty;
 
-      _digits = ocr.Elements.Where(e => _valid.Contains(e.Text.Trim())).ToList();
+      _digits = OcrResultValidation.PickValidElements (ocr, corners);
     }
  
     internal void InvalidatePosition (int counter, string msg = "")

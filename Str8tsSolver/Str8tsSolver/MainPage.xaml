@@ -8,16 +8,17 @@
     <drawable:BoardDrawable x:Key="drawable" x:Name="myGraphics"/>
   </ContentPage.Resources>
   <ScrollView>
-    <AbsoluteLayout>
-      <StackLayout AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0,1,0.2" Orientation="Horizontal" HorizontalOptions="Center" VerticalOptions="Start">
-        <Button x:Name="OpenButton" Text="Open" Clicked="OnOpenButtonClicked"/>
-        <Button x:Name="ScanButton" Text="Scan" Clicked="OnScanButtonClicked"/>
-        <Button x:Name="AnalyzeButton" Text="Analyze" Clicked="OnAnalyzeButtonClicked"/>
-        <Button x:Name="SolveButton" Text="Solve" Clicked="OnSolveButtonClicked"/>
-      </StackLayout>      
-      <toolkit:CameraView x:Name="MyCamera" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0.2,1,0.8" MediaCaptured="MyCamera_MediaCaptured" />
-      <Image x:Name="CapturedImage" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0.2,1,0.8" IsVisible="False"/>
-      <GraphicsView x:Name="myView" Drawable="{StaticResource drawable}" AbsoluteLayout.LayoutFlags="All" AbsoluteLayout.LayoutBounds="0,0.2,1,0.8" HeightRequest="500" IsVisible="True"/>
+    <AbsoluteLayout >
+      <HorizontalStackLayout Margin="0, 0, 5, 5" Spacing="10"  AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,0,360,50" >
+        <Button x:Name="OpenButton" Text="Open" Width="20" Clicked="OnOpenButtonClicked" Grid.Column="0"/>
+        <Button x:Name="ScanButton" Text="Scan" Width="20" Clicked="OnScanButtonClicked" Grid.Column="1"/>
+        <Button x:Name="AnalyzeButton" Text="Analyze" Width="20" Clicked="OnAnalyzeButtonClicked" Grid.Column="2"/>
+        <Button x:Name="SolveButton" Text="Solve" Width="20" Clicked="OnSolveButtonClicked" Grid.Column="3"/>
+      </HorizontalStackLayout>
+      <toolkit:CameraView x:Name="MyCamera" AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,51,360,500" MediaCaptured="MyCamera_MediaCaptured" />
+      <Image x:Name="CapturedImage" AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,51,360,500" IsVisible="False"/>
+      <GraphicsView x:Name="myView" Drawable="{StaticResource drawable}" AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,51,360,500" IsVisible="True"/>
+      <!--HeightRequest="500"-->
     </AbsoluteLayout>    
   </ScrollView>
 
