@@ -38,6 +38,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\Str8tsSolverImageTools\Str8tsSolverImageTools.csproj" />
+	  <ProjectReference Include="..\..\Str8tsSolverLib\Str8tsSolverLib.csproj" />
 	</ItemGroup>
 
 </Project>

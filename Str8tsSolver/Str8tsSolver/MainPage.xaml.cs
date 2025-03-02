@@ -2,6 +2,7 @@
 using CommunityToolkit.Maui.Core.Primitives;
 using Str8tsSolverImageTools;
 using Plugin.Maui.OCR;
+using Str8tsSolverLib;
 
 namespace Str8tsSolver
 {
@@ -26,6 +27,8 @@ namespace Str8tsSolver
     private OcrResult _ocrResult;
     private OcrOptions _ocrOptions;
     private List<System.Drawing.Point> _corners;
+
+    private char[,] _grid;
 
     public MainPage(ICameraProvider cp)
     {
@@ -244,12 +247,28 @@ namespace Str8tsSolver
     private void OnAnalyzeButtonClicked(object sender, EventArgs args)
     {
       var elements = OcrResultValidation.GetValidElements(_ocrResult, _imgWidth, _imgHeight);
-      var board = BoardFinder.FindBoard(_stream, _corners, elements);
+      _grid = BoardFinder.FindBoard(_stream, _corners, elements);
+      EnableSolveButton(true);
     }
 
     private void OnSolveButtonClicked(object sender, EventArgs e)
     {
       // Implement Solve functionality
+      if (_grid == null)
+        return;
+
+      var board = new Board (_grid);
+      board.ReadBoard();
+      board.PositionSolved += Board_PositionSolved;
+
+      //var solved = Str8tsSolverLib.Str8tsSolver.Solve (board, out int iterations);
+      Task.Run(() => Str8tsSolverLib.Str8tsSolver.Solve(board, out int iterations));
+    }
+
+    private void Board_PositionSolved(int x, int y, char newValue)
+    {
+      myGraphics.PositionSolved(x, y, newValue);
+      myView.Invalidate();
     }
 
     public void EnableScanButton(bool isEnabled) => ScanButton.IsEnabled = isEnabled;

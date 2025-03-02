@@ -19,7 +19,7 @@ namespace Str8tsSolver
       return ocrResult.Elements.Where(e => _valid.Contains(e.Text.Trim())).ToList();
     }
 
-    public static List<OcrElement> GetValidElements (OcrResult ocrResult, int imgWidth, int imgHeight)
+    public static List<OcrElement> GetValidElements(OcrResult ocrResult, int imgWidth, int imgHeight)
     {
       var elements = new List<OcrElement>();
       foreach (var e in ocrResult.Elements.Where(e => _valid.Contains(e.Text.Trim())))
@@ -36,6 +36,25 @@ namespace Str8tsSolver
       }
 
       return elements;
+    }
+  }
+
+  public class GridValue
+  {
+    public char Value { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
+  }
+
+  internal static class ViewHelper
+  {
+    public static (int, int) GridPos2ViewCoo(int x, int y, Point? ul, Point? ur, Point? ll, Point? lr)
+    {
+      var dx = (ur?.X - ul?.X) / 9;
+      var dy = (ll?.Y - ul?.Y) / 9;
+      var x1 = ul?.X + y * dx;
+      var y1 = 30+ (ul?.Y + x * dy);
+      return ((int)x1, (int)y1);
     }
   }
 }

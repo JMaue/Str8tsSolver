@@ -1,6 +1,7 @@
 ﻿using Microsoft.Maui.Controls;
 using Plugin.Maui.OCR;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Drawing;
@@ -29,7 +30,11 @@ namespace Str8tsSolver
     private double _scaleY;
 
     private List<OcrElement> _digits;
+    private ConcurrentBag<GridValue> _gridVals = new ConcurrentBag<GridValue>();
     private List<string> _valid = ["1", "2", "3", "4", "5", "6", "/", "8", "9"];
+
+    private List<string> l1 = new List<string>();
+    private List<string> l2 = new List<string>();
 
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
@@ -42,23 +47,34 @@ namespace Str8tsSolver
 
       if (_digits != null && _digits.Count > 0)
       {
-        var l = new List<string>();
         canvas.FontColor = Colors.Green;
+        l1.Clear();
         foreach (var digit in _digits)
         {
           var y = 30 + digit.X * _scaleX;
           var x = 30 + _upperRight.Value.X - (digit.Y * _scaleY);
-          l.Add($"´{digit.Text}:{(int)x},{(int)y}");
+          l1.Add($"´{digit.Text}:{(int)x},{(int)y}");
           canvas.DrawString(digit.Text, (float)x, (float)y, HorizontalAlignment.Center);
         }
       }
-      else
+      if (_gridVals.Count > 0)
       {
-        var x = dirtyRect.X + dirtyRect.Width / 2;
-        var y = dirtyRect.Y + dirtyRect.Height / 2;
-        var msg = _message == null || _message.Length == 0 ? _counter.ToString() : _message;
-        canvas.DrawString(msg, x, y, HorizontalAlignment.Center);
+        canvas.FontColor = Colors.Red;
+        l2.Clear();
+        foreach (var gv in _gridVals)
+        {
+          var (x, y) = ViewHelper.GridPos2ViewCoo(gv.X, gv.Y, _upperLeft, _upperRight, _lowerLeft, _lowerRight);
+          l2.Add($"{gv.Value} ({gv.X}, {gv.Y}) : {x},{y}");
+          canvas.DrawString(gv.Value.ToString(), (float)x, (float)y, HorizontalAlignment.Center);
+        }
       }
+      //else
+      //{
+      //  var x = dirtyRect.X + dirtyRect.Width / 2;
+      //  var y = dirtyRect.Y + dirtyRect.Height / 2;
+      //  var msg = _message == null || _message.Length == 0 ? _counter.ToString() : _message;
+      //  canvas.DrawString(msg, x, y, HorizontalAlignment.Center);
+      //}
 
       if (_upperLeft == null || _upperRight == null || _lowerRight == null || _lowerLeft == null)
       {
@@ -109,6 +125,11 @@ namespace Str8tsSolver
       _lowerLeft = null;
       _message = msg;
       _digits?.Clear();
+    }
+
+    internal void PositionSolved(int x, int y, char newValue)
+    {
+      _gridVals.Add(new GridValue { X = x, Y = y, Value = newValue });
     }
   }
 }
