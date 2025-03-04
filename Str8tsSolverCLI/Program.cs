@@ -12,15 +12,15 @@
 
       char[,] b = new char[,]
       { // hard
-        { '#', ' ', ' ', ' ', '#', '#', ' ', ' ', 'D' },
-        { '#', ' ', ' ', '7', ' ', '#', ' ', ' ', ' ' },
-        { ' ', ' ', '#', '5', ' ', ' ', '#', ' ', ' ' },
-        { '1', ' ', ' ', '#', 'F', ' ', ' ', ' ', '#' },
-        { ' ', ' ', ' ', ' ', ' ', ' ', ' ', '9', ' ' },
-        { '#', ' ', ' ', ' ', '#', 'E', ' ', ' ', '7' },
-        { ' ', ' ', 'A', ' ', ' ', '4', '#', ' ', ' ' },
-        { ' ', ' ', ' ', 'I', ' ', ' ', ' ', ' ', '#' },
-        { 'G', ' ', ' ', '#', '#', ' ', '1', ' ', '#' },
+        { '#', '#', ' ', ' ', '#', ' ', ' ', 'D', '#' },
+        { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '6' },
+        { '8', ' ', '#', ' ', ' ', 'A', ' ', ' ', ' ' },
+        { '#', '#', ' ', ' ', '3', ' ', 'G', ' ', ' ' },
+        { '#', ' ', '3', '#', '#', ' ', ' ', ' ', '#' },
+        { ' ', '4', '#', '#', ' ', ' ', '#', 'E', ' ' },
+        { ' ', ' ', ' ', ' ', '7', ' ', 'I', ' ', ' ' },
+        { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
+        { 'F', '#', ' ', ' ', '#', '#', ' ', ' ', '#' },
       };
 
       string imagePath1 = @"D:\Jens\Repositories\Str8tsSolver\Data\20241129_222948.jpg";
@@ -44,15 +44,15 @@
       //var grid = bf.(imagePath14);
       //bf.Dispose();
 
-      //var board = new Board (grid);
-      //board.ReadBoard();
-      //board.PrintBoard(true);
-      //board.PositionSolved += (x, y, newValue) => Console.WriteLine($"Position {x},{y} solved with {newValue}");
+      var board = new Board (b);
+      board.ReadBoard();
+      board.PrintBoard(true);
+      board.PositionSolved += (x, y, newValue) => Console.WriteLine($"Position {x},{y} solved with {newValue}");
 
-      //var solved = Str8tsSolver.Solve(board, out int iterations);
-      //var msg = solved ? "Solved" : "Not solved";
-      //Console.WriteLine($"{msg} with {iterations} iterations");
-      //board.PrintBoard();
+      var solved = Str8tsSolver.Solve(board, out int iterations);
+      var msg = solved ? "Solved" : "Not solved";
+      Console.WriteLine($"{msg} with {iterations} iterations");
+      board.PrintBoard();
     }
   }
 }
