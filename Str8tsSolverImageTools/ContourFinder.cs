@@ -25,7 +25,6 @@ namespace Str8tsSolverImageTools
     public List<Point> FindExternalContour(byte[] rawBytes, out int width, out int height)
     {
       Mat? image = BytesArrayToMat(rawBytes);
-      //Mat image = CvInvoke.Imread(@"D:\Jens\Repositories\Str8tsSolver\Data\ex9.png", ImreadModes.Color);
       width = image != null ? image.Width : 0;
       height = image != null ? image.Height : 0;
       return FindExternalContour(ref image);
@@ -135,7 +134,6 @@ namespace Str8tsSolverImageTools
 
       return Point.Empty;
     }
-
 
     public Mat? BytesArrayToMat(byte[]  rawBytes)
     {

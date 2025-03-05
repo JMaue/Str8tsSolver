@@ -101,5 +101,56 @@ namespace Str8tsSolverImageTools
 
     public int DX => B.X - A.X;
     public int DY => B.Y - A.Y;
+
+    public List<Point> Split(int parts)
+    {
+      var res = new List<Point>();
+      for (int i = 0; i <= parts; i++)
+      {
+        res.Add(new Point(A.X + i * DX / parts, A.Y + i * DY / parts));
+      }
+      return res;
+    }
+  }
+
+  public class Square
+  {
+    public Point UpperLeft { get; set; }
+    public Point UpperRight { get; set; }
+    public Point LowerRight { get; set; }
+    public Point LowerLeft { get; set; }
+
+    public (int, int) Center => ((UpperLeft.X + UpperRight.X + LowerLeft.X + LowerRight.X) / 4, (UpperLeft.Y + UpperRight.Y + LowerLeft.Y + LowerRight.Y) / 4);
+
+    public void ScaleToView(double scaleX, double scaleY)
+    {
+      UpperLeft = new Point((int)(UpperLeft.X * scaleX), (int)(UpperLeft.Y * scaleY));
+      UpperRight = new Point((int)(UpperRight.X * scaleX), (int)(UpperRight.Y * scaleY));
+      LowerLeft = new Point((int)(LowerLeft.X * scaleX), (int)(LowerLeft.Y * scaleY));
+      LowerRight = new Point((int)(LowerRight.X * scaleX), (int)(LowerRight.Y * scaleY));
+    }
+
+    public Square[,] SplitIntoCells(int row, int cols)
+    {
+      var res = new Square[9, 9];
+      var leftSide = new Side(UpperLeft, LowerLeft).Split(9);
+      var rightSide = new Side(UpperRight, LowerRight).Split(9);
+      for (int r = 0; r < row; r++)
+      {
+        var upperSide = new Side(leftSide[r], rightSide[r]).Split(9);
+        var lowerSide = new Side(leftSide[r + 1], rightSide[r + 1]).Split(9);
+
+        for (int c = 0; c < cols; c++)
+        {
+          var upperLeft = upperSide[c];
+          var upperRight = upperSide[c + 1];
+          var lowerLeft = lowerSide[c];
+          var lowerRight = lowerSide[c + 1];
+          res[r, c] = new Square { UpperLeft = upperLeft, UpperRight = upperRight, LowerLeft = lowerLeft, LowerRight = lowerRight };
+        }
+      }
+
+      return res;
+    }
   }
 }

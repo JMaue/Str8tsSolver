@@ -203,6 +203,7 @@ namespace Str8tsSolverLib
 
     public void PrintBoard(bool big = true)
     {
+      return;
       for (int x = 0; x < 9; x++)
       {
         Console.WriteLine(" ----- ----- ----- ----- ----- ----- ----- ----- ----- ");

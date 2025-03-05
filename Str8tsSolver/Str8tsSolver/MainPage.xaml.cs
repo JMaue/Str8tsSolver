@@ -3,6 +3,7 @@ using CommunityToolkit.Maui.Core.Primitives;
 using Str8tsSolverImageTools;
 using Plugin.Maui.OCR;
 using Str8tsSolverLib;
+using System.Drawing;
 
 namespace Str8tsSolver
 {
@@ -136,7 +137,7 @@ namespace Str8tsSolver
           }
           _stream = bytes;
           _corners = corners;
-          myGraphics.UpdatePosition(corners, _viewWidth, _viewHeight, _imgWidth, _imgHeight, _counter, _ocrResult);
+          myGraphics.SetBoardContour(corners, _viewWidth, _viewHeight, _imgWidth, _imgHeight); //, _ocrResult);
 
           Dispatcher.Dispatch(() => {
             EnableAnalyzeButton(true);
@@ -227,7 +228,7 @@ namespace Str8tsSolver
               _stream = imageAsBytes;
               _corners = corners;
               Dispatcher.Dispatch(() => { ShowCapturedImage(imageAsBytes); });
-              myGraphics.UpdatePosition(corners, _viewWidth, _viewHeight, width, heigth, _counter, _ocrResult);
+              myGraphics.SetBoardContour(corners, _viewWidth, _viewHeight, width, heigth); //, _counter, _ocrResult);
               myView.Invalidate();
             }
           }
@@ -248,6 +249,9 @@ namespace Str8tsSolver
     {
       var elements = OcrResultValidation.GetValidElements(_ocrResult, _imgWidth, _imgHeight);
       _grid = BoardFinder.FindBoard(_stream, _corners, elements);
+      myGraphics.SetBoard(_grid);
+      myView.Invalidate();
+
       EnableSolveButton(true);
     }
 
@@ -269,6 +273,7 @@ namespace Str8tsSolver
     {
       myGraphics.PositionSolved(x, y, newValue);
       myView.Invalidate();
+      Thread.Sleep(500);
     }
 
     public void EnableScanButton(bool isEnabled) => ScanButton.IsEnabled = isEnabled;

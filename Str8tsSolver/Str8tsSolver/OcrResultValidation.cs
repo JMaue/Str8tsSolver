@@ -12,10 +12,10 @@ namespace Str8tsSolver
   {
     private static List<string> _valid = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
-    public static List<OcrResult.OcrElement> PickValidElements(OcrResult ocrResult, List<System.Drawing.Point> corners)
+    public static List<OcrResult.OcrElement> PickValidElements(OcrResult ocrResult) //, List<System.Drawing.Point> corners)
     {
       var candidates = ocrResult.Elements.Where(e => _valid.Contains(e.Text.Trim())).ToList();
-      candidates.Where(e => corners.All(c => c.X > e.X && c.Y == e.Y));
+      //candidates.Where(e => corners.All(c => c.X > e.X && c.Y == e.Y));
       return ocrResult.Elements.Where(e => _valid.Contains(e.Text.Trim())).ToList();
     }
 
