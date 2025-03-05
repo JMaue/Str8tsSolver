@@ -8,7 +8,7 @@ namespace Str8tsSolverLib
 {
   public class Board
   {
-    private static readonly char[] _delims =  ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', '#'];
+    private static readonly char[] _delims = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', '#'];
 
     internal readonly char[,] _board;
     internal Cell[,] _grid;
@@ -23,12 +23,13 @@ namespace Str8tsSolverLib
     }
 
     // Definiere den Delegate
-    public delegate void PositionSolvedHandler(int x, int y, char newValue);
+    public delegate void SolvingProgressHandler(string currStr8t);
+    public event SolvingProgressHandler SolvingProgress;
 
+    public delegate void PositionSolvedHandler(int x, int y, char newValue);
     public event PositionSolvedHandler PositionSolved;
 
     public delegate void PuzzleSolvedHandler(bool success);
-
     public event PuzzleSolvedHandler PuzzleSolved;
 
     public Board Clone()
@@ -260,6 +261,11 @@ namespace Str8tsSolverLib
       var rc = IsSolved && IsValid();
       PuzzleSolved?.Invoke(rc);
       return rc;
+    }
+
+    internal void ReportProgress(string v)
+    {
+      SolvingProgress?.Invoke(v);
     }
   }
 }

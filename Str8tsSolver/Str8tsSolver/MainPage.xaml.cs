@@ -176,12 +176,7 @@ namespace Str8tsSolver
         try
         {
           stream.CopyTo(memoryStream);
-          byte[] data = memoryStream.ToArray();
-          //Mat mat = new Mat();
-          //CvInvoke.Imdecode(data, ImreadModes.Color, mat);
-          //CvInvoke.Circle(mat, new Point(100, 100), 50, new MCvScalar(0, 0, 255), 2);
-          //SaveRegionToFile(mat, fn);
-          return data;
+          return memoryStream.ToArray();
         }
         catch (Exception ex)
         {
@@ -213,7 +208,6 @@ namespace Str8tsSolver
       EnableScanButton(false);
       EnableAnalyzeButton(false);
       EnableSolveButton(false);
-      byte[] imageAsBytes = null;
       Task.Run(async () =>
       {
         try
@@ -272,9 +266,16 @@ namespace Str8tsSolver
       board.ReadBoard();
       board.PositionSolved += Board_PositionSolved;
       board.PuzzleSolved += Board_PuzzleSolved;
+      board.SolvingProgress += Board_SolvingProgress;
 
       //var solved = Str8tsSolverLib.Str8tsSolver.Solve (board, out int iterations);
       Task.Run(() => Str8tsSolverLib.Str8tsSolver.Solve(board, out int iterations));
+    }
+
+    private void Board_SolvingProgress(string currStr8t)
+    {
+      myGraphics.SolvingProgress(currStr8t);
+      myView.Invalidate();
     }
 
     private void Board_PuzzleSolved(bool success)

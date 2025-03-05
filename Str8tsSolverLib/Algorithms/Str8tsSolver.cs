@@ -61,6 +61,7 @@ namespace Str8tsSolverLib
           {
             if (!str8t.IsSolved())
             {
+              board.ReportProgress($"{str8t}");
               progress |= alg.Solve(board, str8t);
               Console.WriteLine($"Algorithm {alg.GetType().Name} finished. Str8t:{str8t}");
               //board.PrintBoard(true);
