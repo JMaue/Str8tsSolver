@@ -14,22 +14,18 @@ namespace Str8tsSolver
 
   public class BoardDrawable : IDrawable
   {
-    //private Point? _upperLeft;
-    //private Point? _lowerLeft;
-    //private Point? _upperRight;
-    //private Point? _lowerRight;
     private Square _board;
     private Square[,] _cells = new Square[9, 9];
+    private bool _solved = false;
 
     private int _counter = 0;
-    private string _message;
+    //private string _message;
 
     private double _scaleX;
     private double _scaleY;
 
     private List<GridValue> _digits = new List<GridValue>();
     private ConcurrentBag<GridValue> _gridVals = new ConcurrentBag<GridValue>();
-    private List<string> _valid = ["1", "2", "3", "4", "5", "6", "/", "8", "9"];
 
     private List<string> l1 = new List<string>();
     private List<string> l2 = new List<string>();
@@ -43,25 +39,9 @@ namespace Str8tsSolver
       canvas.FontColor = Colors.Black;
       canvas.FontSize = 20;
 
-      if (_digits != null && _digits.Count > 0)
-      {
-        canvas.FontColor = Colors.Green;
-        l1.Clear();
-        foreach (var digit in _digits)
-        {
-          //var y = 30 + digit.X * _scaleX;
-          //var x = 30 + _upperRight.Value.X - (digit.Y * _scaleY);
-          //l1.Add($"´{digit.Text}:{(int)x},{(int)y}");
-          //canvas.DrawString(digit.Text, (float)x, (float)y, HorizontalAlignment.Center);
-
-          var (x, y) = _cells[digit.X, digit.Y].Center;
-          //var y = _cells[digit.X, digit.Y].UpperLeft.Y + 5;
-          canvas.DrawString($"{digit.Value}", (float)x, (float)y, HorizontalAlignment.Center);
-        }
-      }
       if (_gridVals.Count > 0)
       {
-        canvas.FontColor = Colors.Red;
+        canvas.FontColor = _solved ? Colors.Green : Colors.DarkOrange;
         l2.Clear();
         foreach (var gv in _gridVals)
         {
@@ -69,17 +49,41 @@ namespace Str8tsSolver
           //l2.Add($"{gv.Value} ({gv.X}, {gv.Y}) : {x},{y}");
           //canvas.DrawString(gv.Value.ToString(), (float)x, (float)y, HorizontalAlignment.Center);
 
-          var (x, y) = _cells[gv.X, gv.Y].Center;
-          canvas.DrawString(gv.Value.ToString(), (float)x, (float)y, HorizontalAlignment.Center);
+          //var (x, y) = _cells[gv.X, gv.Y].Center;
+          canvas.DrawString(gv.Value.ToString(), _cells[gv.X, gv.Y].Rect, HorizontalAlignment.Center, VerticalAlignment.Center);
         }
       }
-      //else
-      //{
-      //  var x = dirtyRect.X + dirtyRect.Width / 2;
-      //  var y = dirtyRect.Y + dirtyRect.Height / 2;
-      //  var msg = _message == null || _message.Length == 0 ? _counter.ToString() : _message;
-      //  canvas.DrawString(msg, x, y, HorizontalAlignment.Center);
-      //}
+      else if (_digits != null && _digits.Count > 0)
+      {
+        canvas.FontColor = Colors.Red;
+        l1.Clear();
+        foreach (var digit in _digits)
+        {
+          //var (x, y) = _cells[digit.X, digit.Y].Center;
+          //var y = _cells[digit.X, digit.Y].UpperLeft.Y + 5;
+          canvas.DrawString($"{digit.Value}", _cells[digit.X, digit.Y].Rect, HorizontalAlignment.Center, VerticalAlignment.Center);
+        }
+      }
+      else if (_board != null) 
+      {
+        canvas.StrokeColor = _solved ? Colors.Green : Colors.DarkOrange;
+        // draw 4 lines that outline the rectangle
+        DrawLine(_board.UpperLeft, _board.UpperRight);
+        DrawLine(_board.UpperRight, _board.LowerRight);
+        DrawLine(_board.LowerRight, _board.LowerLeft);
+        DrawLine(_board.LowerLeft, _board.UpperLeft);
+
+        for (int i = 0; i < 9; i++)
+        {
+          for (int j = 0; j < 9; j++)
+          {
+            DrawLine(_cells[i, j].UpperLeft, _cells[i, j].UpperRight);
+            DrawLine(_cells[i, j].UpperRight, _cells[i, j].LowerRight);
+            DrawLine(_cells[i, j].LowerRight, _cells[i, j].LowerLeft);
+            DrawLine(_cells[i, j].LowerLeft, _cells[i, j].UpperLeft);
+          }
+        }
+      }
 
       if (_board == null)
       {
@@ -87,23 +91,6 @@ namespace Str8tsSolver
         return;
       }
 
-      canvas.StrokeColor = Colors.Green;
-      // draw 4 lines that outline the rectangle
-      DrawLine(_board.UpperLeft, _board.UpperRight);
-      DrawLine(_board.UpperRight, _board.LowerRight);
-      DrawLine(_board.LowerRight, _board.LowerLeft);
-      DrawLine(_board.LowerLeft, _board.UpperLeft);
-
-      for (int i = 0; i < 9; i++)
-      {
-        for (int j = 0; j < 9; j++)
-        {
-          DrawLine(_cells[i, j].UpperLeft, _cells[i, j].UpperRight);
-          DrawLine(_cells[i, j].UpperRight, _cells[i, j].LowerRight);
-          DrawLine(_cells[i, j].LowerRight, _cells[i, j].LowerLeft);
-          DrawLine(_cells[i, j].LowerLeft, _cells[i, j].UpperLeft);
-        }
-      }
       void DrawLine(System.Drawing.Point a, System.Drawing.Point b) => canvas.DrawLine((float)a.X, (float)a.Y, (float)b.X, (float)b.Y);
     }
     
@@ -146,8 +133,6 @@ namespace Str8tsSolver
     }
     internal void UpdatePosition(OcrResult ocr)
     {
-      _message = string.Empty;
-
       //_digits = OcrResultValidation.PickValidElements(ocr); //, corners);
     }
  
@@ -159,13 +144,17 @@ namespace Str8tsSolver
       //_lowerRight = null;
       //_lowerLeft = null;
       _board = null;
-      _message = msg;
       _digits?.Clear();
     }
 
     internal void PositionSolved(int x, int y, char newValue)
     {
       _gridVals.Add(new GridValue { X = x, Y = y, Value = newValue });
+    }
+
+    internal void PuzzleSolved (bool solved)
+    {
+      _solved = solved;
     }
   }
 }

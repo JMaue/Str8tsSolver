@@ -120,6 +120,7 @@ namespace Str8tsSolverImageTools
     public Point LowerRight { get; set; }
     public Point LowerLeft { get; set; }
 
+    public Rect Rect => new Rect(UpperLeft.X, UpperRight.Y, UpperRight.X - UpperLeft.X, LowerRight.Y - UpperRight.Y);
     public (int, int) Center => ((UpperLeft.X + UpperRight.X + LowerLeft.X + LowerRight.X) / 4, (UpperLeft.Y + UpperRight.Y + LowerLeft.Y + LowerRight.Y) / 4);
 
     public void ScaleToView(double scaleX, double scaleY)

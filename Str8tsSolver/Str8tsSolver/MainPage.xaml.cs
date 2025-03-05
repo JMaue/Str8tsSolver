@@ -63,6 +63,13 @@ namespace Str8tsSolver
       };
     }
 
+    private void ResetVars()
+    {
+      _ocrResult = null;
+      _corners.Clear();
+      _grid = null;
+    }
+
     private async Task CaptureImagesPeriodically(CancellationToken token)
     {
       Thread.Sleep(10);
@@ -264,16 +271,23 @@ namespace Str8tsSolver
       var board = new Board (_grid);
       board.ReadBoard();
       board.PositionSolved += Board_PositionSolved;
+      board.PuzzleSolved += Board_PuzzleSolved;
 
       //var solved = Str8tsSolverLib.Str8tsSolver.Solve (board, out int iterations);
       Task.Run(() => Str8tsSolverLib.Str8tsSolver.Solve(board, out int iterations));
+    }
+
+    private void Board_PuzzleSolved(bool success)
+    {
+      myGraphics.PuzzleSolved(success); 
+      myView.Invalidate();
     }
 
     private void Board_PositionSolved(int x, int y, char newValue)
     {
       myGraphics.PositionSolved(x, y, newValue);
       myView.Invalidate();
-      Thread.Sleep(500);
+      Thread.Sleep(10);
     }
 
     public void EnableScanButton(bool isEnabled) => ScanButton.IsEnabled = isEnabled;

@@ -8,7 +8,7 @@ namespace Str8tsSolverLib
 {
   public class Board
   {
-    private static readonly char[] _delims = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', '#'];
+    private static readonly char[] _delims =  ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', '#'];
 
     internal readonly char[,] _board;
     internal Cell[,] _grid;
@@ -24,7 +24,12 @@ namespace Str8tsSolverLib
 
     // Definiere den Delegate
     public delegate void PositionSolvedHandler(int x, int y, char newValue);
+
     public event PositionSolvedHandler PositionSolved;
+
+    public delegate void PuzzleSolvedHandler(bool success);
+
+    public event PuzzleSolvedHandler PuzzleSolved;
 
     public Board Clone()
     {
@@ -42,8 +47,12 @@ namespace Str8tsSolverLib
       return clone;
     }
 
-    public List<Str8t> ReadHorizontalStr8ts(char[,] board) => ReadStr8ts(board, (x, y) => board[x, y], (x, y) => new HStr8t(x, y, this));
-    public List<Str8t> ReadVerticalStr8ts(char[,] board) => ReadStr8ts(board, (x, y) => board[y, x], (x, y) => new VStr8t(x, y, this));
+    public List<Str8t> ReadHorizontalStr8ts(char[,] board) =>
+      ReadStr8ts(board, (x, y) => board[x, y], (x, y) => new HStr8t(x, y, this));
+
+    public List<Str8t> ReadVerticalStr8ts(char[,] board) =>
+      ReadStr8ts(board, (x, y) => board[y, x], (x, y) => new VStr8t(x, y, this));
+
     private List<Str8t> ReadStr8ts(char[,] board, Func<int, int, char> select, Func<int, int, Str8t> create)
     {
       var str8ts = new List<Str8t>();
@@ -103,6 +112,7 @@ namespace Str8tsSolverLib
           row = s.IsHorizontal ? new HRow(s._x) : new VRow(s._x);
           Rows.Add(row);
         }
+
         row.AddStr8t(s);
         s.SetRow(row);
         row.SetCells(this);
@@ -133,7 +143,7 @@ namespace Str8tsSolverLib
     internal void UpdateCell(Str8t str8t, int pos, int val)
     {
       (int x, int y) = str8t.CellPos(pos);
-      _board[x, y] = (char)(val + '0');
+      _board[x, y] = (char) (val + '0');
       if (PositionSolved != null)
         PositionSolved(x, y, _board[x, y]);
     }
@@ -146,6 +156,7 @@ namespace Str8tsSolverLib
         PositionSolved(x, y, _board[x, y]);
       _grid[x, y].Candidates.Clear();
     }
+
     internal void UpdateCells(Str8t str8t, string val)
     {
       for (int pos = 0; pos < val.Length; pos++)
@@ -160,7 +171,7 @@ namespace Str8tsSolverLib
       if (Cell.ValidCells.Contains(v))
         return v;
       if (Cell.BlackCells.Contains(v))
-        return (char)(v - 'A' + '1');
+        return (char) (v - 'A' + '1');
 
       return ' ';
     }
@@ -173,6 +184,7 @@ namespace Str8tsSolverLib
         var cellValues = Enumerable.Range(0, 9).Select(y => GetValue(x, y)).ToList();
         isValid = isValid && Cell.ValidCells.All(c => cellValues.Count(c1 => c1 == c) <= 1);
       }
+
       if (!isValid)
         return false;
 
@@ -186,7 +198,7 @@ namespace Str8tsSolverLib
     }
 
     public bool IsSolved => Str8ts.All(s => s.IsSolved());
-   
+
     public void PrintBoard()
     {
       for (int x = 0; x < 9; x++)
@@ -196,8 +208,10 @@ namespace Str8tsSolverLib
           char c = _board[x, y] == ' ' ? '.' : _board[x, y];
           Console.Write(c);
         }
+
         Console.WriteLine();
       }
+
       Console.WriteLine();
     }
 
@@ -223,6 +237,7 @@ namespace Str8tsSolverLib
               Console.ForegroundColor = ConsoleColor.White;
               Console.BackgroundColor = ConsoleColor.Black;
             }
+
             Console.Write(' ');
             for (int i = 0; i < 3; i++)
               Console.Write(c[r, i]);
@@ -231,11 +246,20 @@ namespace Str8tsSolverLib
             Console.BackgroundColor = ConsoleColor.Black;
             Console.Write('|');
           }
+
           Console.WriteLine();
         }
       }
+
       Console.WriteLine(" ----- ----- ----- ----- ----- ----- ----- ----- ----- ");
       Console.WriteLine();
+    }
+
+    public bool Finish()
+    {
+      var rc = IsSolved && IsValid();
+      PuzzleSolved?.Invoke(rc);
+      return rc;
     }
   }
 }

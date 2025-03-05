@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -76,7 +77,7 @@ namespace Str8tsSolverLib
 
       } while (progress || iterations == 1);
 
-      return board.IsSolved && board.IsValid();
+      return board.Finish();
     }
   }
 }
