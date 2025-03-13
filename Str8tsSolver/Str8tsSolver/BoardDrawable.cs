@@ -66,7 +66,7 @@ namespace Str8tsSolver
       }
       if (_state == SolverState.Finished || _state == SolverState.Solving)
       {
-        canvas.FontColor = _solved ? Colors.Green : Colors.Red;
+        canvas.FontColor = _state == SolverState.Solving ? Colors.DarkOrange : _solved ? Colors.Green : Colors.Red;
         foreach (var gv in _gridVals)
         {
           canvas.DrawString(gv.Value.ToString(), _cells[gv.X, gv.Y].Rect, HorizontalAlignment.Center, VerticalAlignment.Center);
@@ -103,7 +103,7 @@ namespace Str8tsSolver
       {
         if (_digits != null && _digits.Count > 0)
         {
-          canvas.FontColor = Colors.Red;
+          canvas.FontColor = Colors.DarkOrange;
           foreach (var digit in _digits)
           {
             canvas.DrawString($"{digit.Value}", _cells[digit.X, digit.Y].Rect, HorizontalAlignment.Center, VerticalAlignment.Center);
@@ -143,12 +143,19 @@ namespace Str8tsSolver
 
     internal void SetBoard(char[,] board)
     {
+      _digits.Clear();
+      _gridVals.Clear();
       for (int r=0; r<9; r++)
       {
         for (int c=0; c<9; c++)
         {
           if (board[r,c] != ' ')
-            _digits.Add(new GridValue { X = r, Y = c, Value = board[r,c] }); 
+          {
+            var digit = board[r, c];
+            if (digit >= 'A')
+              digit = (char)(digit - 'A' + '1');
+            _digits.Add(new GridValue { X = r, Y = c, Value = digit});
+          }         
         }
       }
       _state = SolverState.Analyzed;

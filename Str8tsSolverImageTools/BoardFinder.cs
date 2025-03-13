@@ -122,7 +122,7 @@ namespace Str8tsSolverImageTools
             }
 
             // define roi
-            int shrink = Convert.ToInt16(dxt * 0.20); // take 20% off from all sides
+            int shrink = 0; // Convert.ToInt16(dxt * 0.20); // take 20% off from all sides
             Rectangle rect = new Rectangle(topLeft.X + shrink, topLeft.Y + shrink,
                                         topRight.X - topLeft.X - (2 * shrink), bottomLeft.Y - topLeft.Y - (2 * shrink));
 

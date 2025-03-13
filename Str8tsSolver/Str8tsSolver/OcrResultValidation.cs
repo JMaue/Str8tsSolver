@@ -5,11 +5,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Plugin.Maui.OCR;
+using Microsoft.Maui.Platform;
 
 namespace Str8tsSolver
 {
   internal static class OcrResultValidation
   {
+    public enum ImgSource
+    {
+      Camera,
+      Screenshot,
+      Photo
+    }
+
     private static List<string> _valid = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
     public static List<OcrResult.OcrElement> PickValidElements(OcrResult ocrResult) //, List<System.Drawing.Point> corners)
@@ -19,23 +27,47 @@ namespace Str8tsSolver
       return ocrResult.Elements.Where(e => _valid.Contains(e.Text.Trim())).ToList();
     }
 
-    public static List<OcrElement> GetValidElements(OcrResult ocrResult, int imgWidth, int imgHeight)
+    public static List<OcrElement> GetValidElements(OcrResult ocrResult, int imgWidth, int imgHeight, ImgSource imgSource)
     {
       var elements = new List<OcrElement>();
       foreach (var e in ocrResult.Elements.Where(e => _valid.Contains(e.Text.Trim())))
       {
-        elements.Add(new OcrElement
-        {
-          Confidence = e.Confidence,
-          Height = e.Height,
-          Text = e.Text,
-          Width = e.Width,
-          X = imgWidth - e.Y,
-          Y = e.X
-        });
+        var ocrElement = imgSource == ImgSource.Camera ? OcrElementFromCamera(e, imgWidth) : OcrElementFromPhotograoh(e);
+        elements.Add(ocrElement);
       }
 
       return elements;
+    }
+  
+    public static OcrElement OcrElementFromCamera(OcrResult.OcrElement e, int imgWidth)
+    {
+      return new OcrElement
+      {
+        Confidence = e.Confidence,
+        Text = e.Text,
+        Height = e.Width,     
+        Width = e.Height,
+        X = imgWidth - e.Y,
+        Y = e.X
+      };
+    }
+
+    public static OcrElement OcrElementFromPhotograoh(OcrResult.OcrElement e)
+    {
+      return new OcrElement
+      {
+        Confidence = e.Confidence,
+        Text = e.Text,
+        Height = e.Height,
+        Width = e.Width,
+        X = e.X,
+        Y = e.Y
+      };
+    }
+
+    public static (int, int) OcrToImageFromScreenshot(int x, int y)
+    {
+      return (x, y);
     }
   }
 

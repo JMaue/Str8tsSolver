@@ -12,10 +12,11 @@ namespace Str8tsSolverTest
   internal class BulkTest
   {
 
-    public char[,] ReadBoard(int day)
+    public char[,] ReadBoard(DateTime day)
     {
-      var reader = new HttpReader();
-      var html = reader.ReadUntilLoadedAsync2(day).Result;
+      var dayStr = day.ToString("yyyy-MM-dd");
+      var filename = $@"D:\Jens\Repositories\Str8tsSolver\Str8tsSolverTest\DerWesten\{dayStr}.txt";
+      var html = File.ReadAllText(filename);
 
       // Load the HTML into an HtmlDocument
       var htmlDoc = new HtmlDocument();
@@ -70,9 +71,9 @@ namespace Str8tsSolverTest
     public void ReadBoard_30Days()
     {
       var day = DateTime.Now;
-      for (int i=0; i<=30; i++)
+      for (int i=1; i<=30; i++)
       {
-        var board = ReadBoard(i);
+        var board = ReadBoard(day - TimeSpan.FromDays(i));
         var d = day.AddDays(-i);
         SaveBoardToFile(board, $"board_{d.ToString("yyyyMMdd")}.txt");
       }

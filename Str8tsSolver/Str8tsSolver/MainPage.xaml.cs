@@ -4,6 +4,7 @@ using Str8tsSolverImageTools;
 using Plugin.Maui.OCR;
 using Str8tsSolverLib;
 using System.Drawing;
+using static Str8tsSolver.OcrResultValidation;
 
 namespace Str8tsSolver
 {
@@ -21,7 +22,7 @@ namespace Str8tsSolver
 
     private int _imgWidth;
     private int _imgHeight;
-
+    private ImgSource _imgSource;
     private ContourFinder _contourFinder;
 
     private byte[] _stream;
@@ -66,7 +67,7 @@ namespace Str8tsSolver
     private void ResetVars()
     {
       _ocrResult = null;
-      _corners.Clear();
+      _corners?.Clear();
       _grid = null;
     }
 
@@ -80,6 +81,7 @@ namespace Str8tsSolver
       {
         LogToFile($"Thread: CaptureImagesPeriodically ");
         MyCamera.CaptureImage(CancellationToken.None);
+        //MyCamera.CameraFlashMode = CameraFlashMode.On;
         _captureEvent.Reset();
         _captureEvent.WaitOne();
         Thread.Sleep(10);
@@ -198,15 +200,24 @@ namespace Str8tsSolver
       }
       MyCamera.IsVisible = true;
       CapturedImage.IsVisible = false;
+      _imgSource = ImgSource.Camera;
+
+      ResetVars();
+      myView.Invalidate();
 
       _captureThread.Start();
     }
+
     private void OnOpenButtonClicked(object sender, EventArgs e)
     {
       _viewWidth = myView.Width;
       _viewHeight = myView.Height;
-      EnableScanButton(false);
-      EnableAnalyzeButton(false);
+
+      ResetVars();
+      myView.Invalidate();
+
+      EnableScanButton(true);
+      EnableAnalyzeButton(true);
       EnableSolveButton(false);
       Task.Run(async () =>
       {
@@ -215,6 +226,8 @@ namespace Str8tsSolver
           var pickResult = await MediaPicker.Default.PickPhotoAsync();
           if (pickResult != null)
           {
+            _imgSource = ImgSource.Photo;
+
             using var imageAsStream = await pickResult.OpenReadAsync();
             var imageAsBytes = new byte[imageAsStream.Length];
             Task.Run(async () => await imageAsStream.ReadAsync(imageAsBytes)).Wait();
@@ -248,7 +261,11 @@ namespace Str8tsSolver
 
     private void OnAnalyzeButtonClicked(object sender, EventArgs args)
     {
-      var elements = OcrResultValidation.GetValidElements(_ocrResult, _imgWidth, _imgHeight);
+      //if (_imgSource == ImgSource.Screenshot && !_contourFinder.IsScreenShot (_corners))
+      //{
+      //  _imgSource = ImgSource.Photo;
+      //}
+      var elements = OcrResultValidation.GetValidElements(_ocrResult, _imgWidth, _imgHeight, _imgSource);
       _grid = BoardFinder.FindBoard(_stream, _corners, elements);
       myGraphics.SetBoard(_grid);
       myView.Invalidate();
