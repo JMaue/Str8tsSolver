@@ -87,6 +87,17 @@ namespace Str8tsSolverLib
       return new List<char>();
     }
 
+    public List<char> GetNakedPairs(Cell m)
+    {
+      var np = GetNakedPairs();
+      if (m.Candidates.All(c=>np.Contains((char)c)) && m.Candidates.Count == np.Count)
+      {
+        // do not consider the naked pairs if thhe current cell is one of them
+        return new List<char>();
+      }
+      return np;
+    }
+
     public virtual List<char> GetValuesInRowOrCol()
     {
       return _row.GetDecidedValues();

@@ -3,7 +3,6 @@ using CommunityToolkit.Maui.Core.Primitives;
 using Str8tsSolverImageTools;
 using Plugin.Maui.OCR;
 using Str8tsSolverLib;
-using System.Drawing;
 using static Str8tsSolver.OcrResultValidation;
 
 namespace Str8tsSolver
@@ -285,8 +284,7 @@ namespace Str8tsSolver
       board.PuzzleSolved += Board_PuzzleSolved;
       board.SolvingProgress += Board_SolvingProgress;
 
-      //var solved = Str8tsSolverLib.Str8tsSolver.Solve (board, out int iterations);
-      Task.Run(() => Str8tsSolverLib.Str8tsSolver.Solve(board, out int iterations));
+      Task.Run(() => Str8tsSolverLib.Str8tsSolver.Solve(board));
     }
 
     private void Board_SolvingProgress(string currStr8t)

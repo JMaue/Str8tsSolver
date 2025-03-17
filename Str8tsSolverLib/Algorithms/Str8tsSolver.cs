@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -11,6 +12,15 @@ namespace Str8tsSolverLib
   interface IAlgorithm
   {
     bool Solve(Board board, Str8t str8t);
+  }
+
+  public interface ITxtOut
+  {
+    void Write(string text);
+    void Write(char c);
+    void WriteLine();
+    void WriteLine(string text);
+    void SetColors (Color foreground, Color background);
   }
 
   public static class Str8tsSolver
@@ -39,9 +49,11 @@ namespace Str8tsSolverLib
       return intersection.ToList();
     }
 
-    public static bool Solve(Board board, out int iterations)
+    public static (bool, int) Solve(Board board, ITxtOut? txtOut = null)
     {
-      iterations = 0;
+      int iterations = 0;
+      board.TxtOut = txtOut;
+
       var algorithms = new List<IAlgorithm>
       {
         //new SingleGapInStr8t(),
@@ -63,14 +75,12 @@ namespace Str8tsSolverLib
             {
               board.ReportProgress($"{str8t}");
               progress |= alg.Solve(board, str8t);
-              Console.WriteLine($"Algorithm {alg.GetType().Name} finished. Str8t:{str8t}");
+              txtOut?.WriteLine($"Algorithm {alg.GetType().Name} finished. Str8t:{str8t}");
               //board.PrintBoard(true);
-              //if (iterations > 1)
-               // Console.ReadLine();
             }
           }
-          Console.WriteLine($"Algorithm {alg.GetType().Name} finished. Iterations:{iterations}, Progress:{progress}");
-          //if (iterations >= 1)
+          txtOut?.WriteLine($"Algorithm {alg.GetType().Name} finished. Iterations:{iterations}, Progress:{progress}");
+          if (iterations >= 1)
             board.PrintBoard(true);
         }
 
@@ -78,7 +88,7 @@ namespace Str8tsSolverLib
 
       } while (progress || iterations == 1);
 
-      return board.Finish();
+      return (board.Finish(), iterations);
     }
   }
 }

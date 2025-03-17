@@ -22,8 +22,6 @@ namespace Str8tsSolver
 
     public static List<OcrResult.OcrElement> PickValidElements(OcrResult ocrResult) //, List<System.Drawing.Point> corners)
     {
-      var candidates = ocrResult.Elements.Where(e => _valid.Contains(e.Text.Trim())).ToList();
-      //candidates.Where(e => corners.All(c => c.X > e.X && c.Y == e.Y));
       return ocrResult.Elements.Where(e => _valid.Contains(e.Text.Trim())).ToList();
     }
 

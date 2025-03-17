@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,9 +16,10 @@ namespace Str8tsSolverLib
     public List<Str8t> Str8ts { get; private set; }
     public List<Row> Rows { get; private set; }
 
-    public Board(char[,] board)
+    public Board(char[,] board, ITxtOut? txtOut = null)
     {
       _board = board;
+      TxtOut = txtOut;
       Str8ts = new List<Str8t>();
       Rows = new List<Row>();
     }
@@ -31,6 +33,8 @@ namespace Str8tsSolverLib
 
     public delegate void PuzzleSolvedHandler(bool success);
     public event PuzzleSolvedHandler PuzzleSolved;
+
+    public ITxtOut? TxtOut;
 
     public Board Clone()
     {
@@ -202,58 +206,65 @@ namespace Str8tsSolverLib
 
     public void PrintBoard()
     {
+      if (TxtOut == null)
+        return;
+
       for (int x = 0; x < 9; x++)
       {
         for (int y = 0; y < 9; y++)
         {
           char c = _board[x, y] == ' ' ? '.' : _board[x, y];
-          Console.Write(c);
+          TxtOut.Write(c);
         }
 
-        Console.WriteLine();
+        TxtOut.WriteLine();
       }
 
-      Console.WriteLine();
+      TxtOut.WriteLine();
     }
 
     public void PrintBoard(bool big = true)
     {
-      return;
+      if (TxtOut == null)
+        return;
+
       for (int x = 0; x < 9; x++)
       {
-        Console.WriteLine(" ----- ----- ----- ----- ----- ----- ----- ----- ----- ");
+        TxtOut.WriteLine(" ----- ----- ----- ----- ----- ----- ----- ----- ----- ");
         for (int r = 0; r < 3; r++)
         {
-          Console.Write('|');
+          TxtOut.Write('|');
           for (int y = 0; y < 9; y++)
           {
             var c = _grid[x, y].Presentation;
             if (_grid[x, y].IsBlack)
             {
-              Console.ForegroundColor = ConsoleColor.Black;
-              Console.BackgroundColor = ConsoleColor.White;
+              TxtOut.SetColors(Color.Black, Color.White);
+              //Console.ForegroundColor = ConsoleColor.Black;
+              //Console.BackgroundColor = ConsoleColor.White;
             }
             else
             {
-              Console.ForegroundColor = ConsoleColor.White;
-              Console.BackgroundColor = ConsoleColor.Black;
+              TxtOut.SetColors(Color.White, Color.Black);
+              //Console.ForegroundColor = ConsoleColor.White;
+              //Console.BackgroundColor = ConsoleColor.Black;
             }
 
-            Console.Write(' ');
+            TxtOut.Write(' ');
             for (int i = 0; i < 3; i++)
-              Console.Write(c[r, i]);
-            Console.Write(' ');
+              TxtOut.Write(c[r, i]);
+            TxtOut.Write(' ');
             Console.ForegroundColor = ConsoleColor.White;
             Console.BackgroundColor = ConsoleColor.Black;
-            Console.Write('|');
+            TxtOut.Write('|');
           }
 
-          Console.WriteLine();
+          TxtOut.WriteLine();
         }
       }
 
-      Console.WriteLine(" ----- ----- ----- ----- ----- ----- ----- ----- ----- ");
-      Console.WriteLine();
+      TxtOut.WriteLine(" ----- ----- ----- ----- ----- ----- ----- ----- ----- ");
+      TxtOut.WriteLine();
     }
 
     public bool Finish()
