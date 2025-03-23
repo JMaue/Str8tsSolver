@@ -26,19 +26,19 @@ namespace Str8tsSolverLib
         foreach (var m in str8t.Members.Where(c => c.Value == ' '))
         {
           var c = m.Candidates.Select(c => (char)c).ToList();
+
           var perp = str8t.GetPerpendicularStr8ts(m);
           if (perp.Any())
           {
-            //c.RemoveAll(o => perp.Cells.Contains(o));
             var certainCells = new List<char>();
-            perp.ForEach(p=>certainCells.AddRange(p.Contains(m) ? p.GetNakedPairs(m) : p.CertainCells()));
+            perp.ForEach(p => certainCells.AddRange(p.Contains(m) ? p.GetNakedPairs(m) : p.CertainCells()));
             c.RemoveAll(certainCells.Contains);
           }
           options.Add(c);
         }
         var candidates = new List<char[]>();
         foreach (var o in Permutations.Permute (options))
-        {
+        { 
           var nextTry = str8t.Cells;
           for (int i = 0; i < cnt; i++)
           {

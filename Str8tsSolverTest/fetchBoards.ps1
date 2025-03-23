@@ -2,7 +2,7 @@ $startDate = Get-Date
 $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 $baseUrl = "https://www.str8ts.com/feed/derwesten/ASStr8tsv2.asp"
 $outputBasePath = "D:\Jens\Repositories\Str8tsSolver\Str8tsSolverTest\DerWesten"
-#$outputBasePath = ".\DerWesten"
+$targetBasePath = ".\Samples_DerWesten"
 
 function Get-Str8tsBoard {
     param (
@@ -82,7 +82,7 @@ function Show-Str8tsBoard {
     }
 }
  
-for ($d = 0; $d -lt 5; $d++) {
+for ($d = 0; $d -lt 10; $d++) {
     $currentDate = $startDate.AddDays(-$d)
     $dateStr = $currentDate.ToString("yyyy-MM-dd")
     Write-Output $dateStr
@@ -105,7 +105,7 @@ for ($d = 0; $d -lt 5; $d++) {
         }
         $boardText += $row
     }
-    $boardText | Out-File -FilePath "$outputBasePath\$dateStr`_X.txt"
+    $boardText | Out-File -FilePath "$targetBasePath\board_$dateStr`.txt"
 }
  
 Write-Output "Done"

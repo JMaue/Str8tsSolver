@@ -4,9 +4,12 @@ namespace Str8tsSolverTest
 {
   public class BoardTests
   {
+    ITxtOut _txtOut;
+
     [SetUp]
     public void Setup()
     {
+      _txtOut = new ConsoleTxtOut();
     }
 
     [Test]
@@ -231,12 +234,46 @@ namespace Str8tsSolverTest
       }));
     }
 
+    [Test]
+    public void Test14()
+    {
+      Assert.IsTrue(Solve(new char[,]
+      { // hard
+        { '#', '#', ' ', ' ', '#', '#', ' ', ' ', 'F' },
+        { '#', '8', ' ', ' ', ' ', 'A', ' ', ' ', ' ' },
+        { ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', '1' },
+        { ' ', ' ', ' ', 'B', ' ', ' ', ' ', '#', '#' },
+        { '#', ' ', ' ', ' ', '#', ' ', ' ', ' ', 'C' },
+        { '#', 'I', ' ', ' ', ' ', '#', ' ', ' ', ' ' },
+        { ' ', ' ', ' ', '#', ' ', '4', ' ', ' ', ' ' },
+        { '1', ' ', ' ', '#', '5', ' ', ' ', ' ', '#' },
+        { 'G', '2', ' ', '#', '#', ' ', ' ', '#', '#' },
+      }));
+    }
+
+    [Test]
+    public void Test15()
+    {
+      Assert.IsTrue(Solve(new char[,]
+      { // hard
+        { ' ', '3', '1', 'D', '#', ' ', ' ', ' ', ' ' },
+        { ' ', ' ', ' ', ' ', ' ', ' ', '7', ' ', ' ' },
+        { 'E', '#', 'C', ' ', ' ', ' ', ' ', '#', '#' },
+        { '#', ' ', ' ', '7', ' ', '#', ' ', ' ', '2' },
+        { ' ', ' ', 'I', ' ', ' ', ' ', 'A', ' ', ' ' },
+        { '8', ' ', ' ', '#', '5', ' ', ' ', ' ', '#' },
+        { 'F', '#', ' ', '1', ' ', ' ', '#', '#', 'G' },
+        { ' ', ' ', ' ', ' ', ' ', ' ', '8', ' ', ' ' },
+        { ' ', ' ', ' ', ' ', '#', '#', ' ', ' ', ' ' },
+      }));
+    }
+
     private bool Solve(char[,] b)
     {
-      var board = new Board(b);
+      var board = new Board(b, _txtOut);
       board.ReadBoard();
       board.PrintBoard(true);
-      var solved = Str8tsSolver.Solve(board, out int iterations);
+      var (solved, iterations) = Str8tsSolver.Solve(board, _txtOut);
       return solved;
     }
 
@@ -257,20 +294,18 @@ namespace Str8tsSolverTest
       return board;
     }
 
-    [Test]
-    public void SolveBoards()
+    public static IEnumerable<string> GetTestFiles()
     {
-      var files = Directory.GetFiles(@"..\\..\\..\\Samples_derwesten\", "board_*.txt");
-      foreach (var file in files)
-      {
+      return Directory.GetFiles(@"..\\..\\..\\Samples_derwesten\", "board_*.txt");
+    }
+
+    [Test]
+    [TestCaseSource(nameof(GetTestFiles))]
+   public void SolveBoards(string file)
+    {
         var board = LoadBoardFromFile(file);
         var solved = Solve(board);
         Assert.IsTrue(solved);
-        if (!solved)
-          Console.WriteLine($"Failed to solve {file}");
-        else
-          Console.WriteLine($"Solved {file}");
-      }
     }
   }
 }

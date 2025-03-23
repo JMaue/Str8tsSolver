@@ -80,7 +80,7 @@ namespace Str8tsSolverLib
             }
           }
           txtOut?.WriteLine($"Algorithm {alg.GetType().Name} finished. Iterations:{iterations}, Progress:{progress}");
-          if (iterations >= 1)
+          //if (iterations >= 1)
             board.PrintBoard(true);
         }
 

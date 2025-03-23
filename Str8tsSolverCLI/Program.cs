@@ -48,15 +48,15 @@
 
       char[,] b = new char[,]
       { // hard
-        { '#', '#', ' ', ' ', '#', '#', ' ', ' ', 'F' },
-        { '#', '8', ' ', ' ', ' ', 'A', ' ', ' ', ' ' },
-        { ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', '1' },
-        { ' ', ' ', ' ', 'B', ' ', ' ', ' ', '#', '#' },
-        { '#', ' ', ' ', ' ', '#', ' ', ' ', ' ', 'C' },
-        { '#', 'I', ' ', ' ', ' ', '#', ' ', ' ', ' ' },
-        { ' ', ' ', ' ', '#', ' ', '4', ' ', ' ', ' ' },
-        { '1', ' ', ' ', '#', '5', ' ', ' ', ' ', '#' },
-        { 'G', '2', ' ', '#', '#', ' ', ' ', '#', '#' },
+        { ' ', '3', '1', 'D', '#', ' ', ' ', ' ', ' ' },
+        { ' ', ' ', ' ', ' ', ' ', ' ', '7', ' ', ' ' },
+        { 'E', '#', 'C', ' ', ' ', ' ', ' ', '#', '#' },
+        { '#', ' ', ' ', '7', ' ', '#', ' ', ' ', '2' },
+        { ' ', ' ', 'I', ' ', ' ', ' ', 'A', ' ', ' ' },
+        { '8', ' ', ' ', '#', '5', ' ', ' ', ' ', '#' },
+        { 'F', '#', ' ', '1', ' ', ' ', '#', '#', 'G' },
+        { ' ', ' ', ' ', ' ', ' ', ' ', '8', ' ', ' ' },
+        { ' ', ' ', ' ', ' ', '#', '#', ' ', ' ', ' ' },
       };
 
       //string imagePath1 = @"D:\Jens\Repositories\Str8tsSolver\Data\20241129_222948.jpg";
@@ -81,7 +81,7 @@
       //bf.Dispose();
 
       var txtOut = new ConsoleTxtOut();
-      b = LoadBoardFromFile(@"D:\\Jens\\Repositories\\Str8tsSolver\\Str8tsSolverTest\\Samples_derwesten\board_20241229.txt");
+      b = LoadBoardFromFile(@"D:\\Jens\\Repositories\\Str8tsSolver\\Str8tsSolverTest\\Samples_derwesten\board_20250302.txt");
       var board = new Board (b, txtOut);
       board.ReadBoard();
       board.PrintBoard(true);

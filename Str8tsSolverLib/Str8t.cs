@@ -63,13 +63,19 @@ namespace Str8tsSolverLib
       var nakedPairs = new Dictionary<string, int>();
       for (int i=0; i<Members.Count; i++)
       {
+        if (!Members[i].Candidates.Any())
+          continue;
+
         for (int j=i+1; j<Members.Count; j++)
         {
+          if (!Members[j].Candidates.Any())
+            continue;
+
           if (Members[i].Candidates.Count == Members[j].Candidates.Count && Members[i].Candidates.Count <= noOfEmptyCells)
           {
             if (Members[i].Candidates.All(Members[j].Candidates.Contains))
             {
-              var key = string.Join("", Members[i].Candidates.Select(c => (char)c));
+              var key = string.Join("", Members[i].Candidates.Order().Select(c => (char)c));
               if (nakedPairs.ContainsKey(key))
                 nakedPairs[key]++;
               else
@@ -81,7 +87,9 @@ namespace Str8tsSolverLib
      
       foreach (var np in nakedPairs)
       {
-        if (np.Key.Length == np.Value)
+        var connections = new List<int>() {0, 1, 3, 6, 10, 15, 21, 28, 36 };
+        // 2=>1, 3=>3, 4=>6, 5=>10, 6=>15, 7=>21, 8=>28, 9=>36
+        if (np.Value == connections[np.Key.Length-1])
           return np.Key.ToCharArray().ToList();
       }
       return new List<char>();
@@ -157,32 +165,111 @@ namespace Str8tsSolverLib
 
     public List<char> CertainCellsBySize ()
     {
-      var rc = new List<char>();
-      var options = new List<int>();
-      Members.ForEach(m => options.AddRange(m.Candidates));
-      options = options.Distinct().ToList();
-      var solved = new List<int> ();
+      var cnt = Cells.Count(c => c == ' ');
+      if (cnt == 0)
+        return Cells.Select(c => c).ToList(); // all cells are solved already
+
+      var solved = new List<int>();
       Members.Where(m => m.Value != ' ').ToList().ForEach(x => solved.Add(x.Value));
-      options.AddRange(solved);
-      if (!options.Any())
-        return new List<char>();
 
-      var min = options.Min();
-      var max = options.Max();
-      if (max - min + 1 == Len)
-        return Enumerable.Range(min, max - min + 1).Select(i => (char)i).ToList();
-
-      if (Enumerable.Range(min, max - min+1).Any(i => options.Contains(i) == false))
-        return new List<char>();
-
-      var certain = new List<char[]>();
-      for (var s=min; s<=max-Len+1; s++)
+      if (solved.Any())
       {
-        var attempt = Enumerable.Range(s, Len).Select(i => (char)(i)).ToList();
-        if (solved.All(x => attempt.Contains((char)(x))))
-          certain.Add(attempt.ToArray());
+        var min1 = solved.Min();
+        var max1 = solved.Max();
+        if (max1 - min1 + 1 == Len)
+          // two solved cells are at the ends of the Str8t
+          return Enumerable.Range(min1, Len).Select(i => (char)i).ToList();
       }
-      return Str8tsSolver.FindIntersection(certain);
+
+      var rc = GetNakedPairs();
+      if (cnt == rc.Count) // all unsolved cells are naked pairs
+      {
+        rc.AddRange(solved.Select(c => (char)c));
+        return rc;
+      }
+
+      // one of the solved cells is at the end of the Str8t
+      if (solved.Contains('1'))
+        return Enumerable.Range(1, Len).Select(i => (char)(i + '0')).ToList();
+      if (solved.Contains('9'))
+        return Enumerable.Range(9 - Len + 1, Len).Select(i => (char)(i + '0')).ToList();
+
+      if (solved.Contains('2') && Len > 2)
+      {
+        var possibleCandidates = Enumerable.Range(3, Len-1).Select(i => (char)(i + '0')).ToList();
+        possibleCandidates.Add('1');
+        rc.AddRange(FindCertainCellsViaPermutation(possibleCandidates));
+        return rc.Distinct().ToList();
+      }
+      if (solved.Contains('8') && Len > 2)
+      {
+        var possibleCandidates = Enumerable.Range(8 - Len + 1, Len-1).Select(i => (char)(i + '0')).ToList();
+        possibleCandidates.Add('9');
+        rc.AddRange(FindCertainCellsViaPermutation(possibleCandidates));
+        return rc.Distinct().ToList();
+      }
+      if (solved.Contains('3') && Len > 3)
+      {
+        var possibleCandidates = Enumerable.Range(4, Len - 1).Select(i => (char)(i + '0')).ToList();
+        possibleCandidates.Add('2');
+        possibleCandidates.Add('1');
+        rc.AddRange(FindCertainCellsViaPermutation(possibleCandidates));
+        return rc.Distinct().ToList();
+
+
+        //rc.AddRange(Enumerable.Range(3, Len - 2).Select(i => (char)(i + '0')));
+        //return rc.Distinct().ToList();
+      }
+      if (solved.Contains('7') && Len > 3)
+      {
+        var possibleCandidates = Enumerable.Range(7 - Len + 1, Len - 1).Select(i => (char)(i + '0')).ToList();
+        possibleCandidates.Add('8');
+        possibleCandidates.Add('9');
+        rc.AddRange(FindCertainCellsViaPermutation(possibleCandidates));
+        return rc.Distinct().ToList();
+      }
+
+      rc = FindCertainCellsViaPermutation(rc);
+      rc.AddRange(solved.Select(c => (char)c));
+      return rc;
+    }
+
+    private List<char> FindCertainCellsViaPermutation(List<char> possibleCandidates)
+    {
+      var rc = new List<char>();
+      var options = new List<List<char>>();
+      foreach (var m in Members)
+      {
+        var c = m.Value != ' ' ?
+          new List<char> { m.Value } :
+          m.Candidates.Any() ?
+          m.Candidates.Select(c => (char)c).ToList() :
+          possibleCandidates;
+
+        options.Add(c);
+      }
+      var candidates = new List<char[]>();
+      foreach (var o in Permutations.Permute(options))
+      {
+        if (IsValid(string.Join("", o)))
+        {
+          candidates.Add(o);
+        }
+      }
+      if (candidates.Count > 0)
+      {
+        var allCandidates = candidates.SelectMany(c => c).ToList().Distinct();
+        foreach (var c in allCandidates)
+        {
+          if (candidates.All(o => o.Contains(c)))
+            rc.Add(c);
+        }
+        //if (rc.Any())
+        //{
+        //  return rc;
+        //}
+      }
+      return rc;
     }
 
     public List<char> CertainCells()
@@ -222,7 +309,6 @@ namespace Str8tsSolverLib
       {
         if (s != this)
         {
-          rc.AddRange(s.GetNakedPairs());
           rc.AddRange(s.CertainCells());
         }
       }
@@ -263,7 +349,7 @@ namespace Str8tsSolverLib
       {
         if (s != this)
         {
-          rc.AddRange(s.GetNakedPairs());
+          //rc.AddRange(s.GetNakedPairs());
           rc.AddRange(s.CertainCells());
         }
       }
