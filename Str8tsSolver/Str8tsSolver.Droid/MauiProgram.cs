@@ -12,7 +12,8 @@ namespace Str8tsSolver.Droid
         .UseSharedMauiApp()
         .UseOcr();
 
-      builder.Services.AddSingleton<IOcrService>(OcrPlugin.Default);
+      //builder.Services.AddSingleton<IOcrService>(OcrPlugin.Default);
+      builder.Services.AddSingleton<IOcrDigitRecognizer>(new OcrDigitRecognizer());
       return builder.Build();
     }
   }

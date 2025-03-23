@@ -1,4 +1,5 @@
-﻿namespace Str8tsSolver.WinUI
+﻿
+namespace Str8tsSolver.WinUI
 {
   public static class MauiProgram
   {
@@ -9,6 +10,7 @@
       builder
         .UseSharedMauiApp();
 
+      builder.Services.AddSingleton<IOcrDigitRecognizer>(new OcrDigitRecognizer());
       return builder.Build();
     }
   }

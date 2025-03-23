@@ -15,7 +15,7 @@
         <Button x:Name="AnalyzeButton" Text="Analyze" Width="20" Clicked="OnAnalyzeButtonClicked" Grid.Column="2"/>
         <Button x:Name="SolveButton" Text="Solve" Width="20" Clicked="OnSolveButtonClicked" Grid.Column="3"/>
       </HorizontalStackLayout>
-      <toolkit:CameraView x:Name="MyCamera" AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,46,360,480" MediaCaptured="MyCamera_MediaCaptured" />
+      <toolkit:CameraView x:Name="MyCamera" AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,46,360,480" MediaCaptured="MyCamera_ImageCaptured" />
       <Image x:Name="CapturedImage" AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,46,360,480" Aspect="Fill" IsVisible="False"/>
       <GraphicsView x:Name="myView" Drawable="{StaticResource drawable}" AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,46,360,480" IsVisible="True"/>
       <!--HeightRequest="500"-->

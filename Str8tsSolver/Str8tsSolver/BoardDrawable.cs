@@ -1,8 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using Plugin.Maui.OCR;
 using Str8tsSolverImageTools;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using static Plugin.Maui.OCR.OcrResult;
 using OcrElement = Str8tsSolverImageTools.OcrElement;
 
 namespace Str8tsSolver
@@ -20,6 +17,13 @@ namespace Str8tsSolver
     Analyzed,
     Solving,
     Finished
+  }
+
+  public class GridValue
+  {
+    public char Value { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
   }
 
   public class BoardDrawable : IDrawable

@@ -1,9 +1,7 @@
 ﻿using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Core.Primitives;
 using Str8tsSolverImageTools;
-using Plugin.Maui.OCR;
 using Str8tsSolverLib;
-using static Str8tsSolver.OcrResultValidation;
 
 namespace Str8tsSolver
 {
@@ -25,23 +23,26 @@ namespace Str8tsSolver
     private ContourFinder _contourFinder;
 
     private byte[] _stream;
-    private OcrResult _ocrResult;
-    private OcrOptions _ocrOptions;
+    private IOcrDigitRecognizer _ocrEngine;
+    //private OcrResult _ocrResult;
+    //private OcrOptions _ocrOptions;
     private List<System.Drawing.Point> _corners;
 
     private char[,] _grid;
 
-    public MainPage(ICameraProvider cp)
+    public MainPage(ICameraProvider cp, IOcrDigitRecognizer ocrEngine)
     {
       InitializeComponent();
       _cameraProvider = cp;
       _contourFinder = new ContourFinder();
+      _ocrEngine = ocrEngine;
 
       MyCamera.MediaCaptured += MyCamera_ImageCaptured;
 
-      var builder = new OcrOptions.Builder();
-      //builder.AddPatternConfig(new OcrPatternConfig("[0..9]"));
-      _ocrOptions = builder.Build(); 
+      //var builder = new OcrOptions.Builder();
+      ////builder.AddPatternConfig(new OcrPatternConfig("[0..9]"));
+      //_ocrOptions = builder.Build();
+      _ocrEngine.Initialize();
 
       CreateCaptureThread();
     }
@@ -53,7 +54,7 @@ namespace Str8tsSolver
       base.OnAppearing();
       _viewWidth = myView.Width;
       _viewHeight = myView.Height;
-      await OcrPlugin.Default.InitAsync();
+      _ocrEngine.Initialize();  //OcrPlugin.Default.InitAsync();
     }
 
     protected async override void OnNavigatedTo(NavigatedToEventArgs args)
@@ -69,11 +70,12 @@ namespace Str8tsSolver
     {
       base.OnNavigatedFrom(args);
 
-      MyCamera.MediaCaptured -= MyCamera_MediaCaptured;
+      MyCamera.MediaCaptured -= MyCamera_ImageCaptured;
       MyCamera.Handler?.DisconnectHandler();
 
       // Worker-Thread stoppen
-      //_cancellationTokenSource.Cancel();
+      _cancellationTokenSource.Cancel();
+      _captureEvent.Set();
     }
     #endregion
 
@@ -88,7 +90,7 @@ namespace Str8tsSolver
 
     private void ResetVars()
     {
-      _ocrResult = null;
+      _ocrEngine.Reset();
       _corners?.Clear();
       _grid = null;
     }
@@ -139,17 +141,18 @@ namespace Str8tsSolver
           myView.Invalidate();
           _captureEvent.Set();
 
-          OcrResult? ocrResult = null;
-          Task.Run(async () =>
-          {
-            ocrResult = await OcrPlugin.Default.RecognizeTextAsync(bytes, _ocrOptions);
-          }).Wait();
+          _ocrEngine.ProcessImage(bytes);
+          //OcrResult? ocrResult = null;
+          //Task.Run(async () =>
+          //{
+          //  ocrResult = await OcrPlugin.Default.RecognizeTextAsync(bytes, _ocrOptions);
+          //}).Wait();
 
-          if (ocrResult != null && ocrResult.Success && ocrResult.Elements.Count > 0)
-          {
-            // capture the OCR results
-            _ocrResult = ocrResult;
-          }
+          //if (ocrResult != null && ocrResult.Success && ocrResult.Elements.Count > 0)
+          //{
+          //  // capture the OCR results
+          //  _ocrResult = ocrResult;
+          //}
 
           // keep the image byte stream for image analysis, i.e. for finding black and white cells
           _stream = bytes;
@@ -250,11 +253,12 @@ namespace Str8tsSolver
             var corners = _contourFinder.FindExternalContour(imageAsBytes, out int width, out int heigth);
             if (corners.Count > 0)
             {
-              var ocrResult = await OcrPlugin.Default.RecognizeTextAsync(imageAsBytes, _ocrOptions);
-              if (ocrResult != null && ocrResult.Success && ocrResult.Elements.Count > 0)
-              {
-                _ocrResult = ocrResult;
-              }
+              _ocrEngine.ProcessImage(imageAsBytes);
+              //var ocrResult = await OcrPlugin.Default.RecognizeTextAsync(imageAsBytes, _ocrOptions);
+              //if (ocrResult != null && ocrResult.Success && ocrResult.Elements.Count > 0)
+              //{
+              //  _ocrResult = ocrResult;
+              //}
               _stream = imageAsBytes;
               _corners = corners;
               Dispatcher.Dispatch(() => { ShowCapturedImage(imageAsBytes); });
@@ -279,7 +283,8 @@ namespace Str8tsSolver
       //{
       //  _imgSource = ImgSource.Photo;
       //}
-      var elements = OcrResultValidation.GetValidElements(_ocrResult, _imgWidth, _imgHeight, _imgSource);
+      //var elements = OcrResultValidation.GetValidElements(_ocrResult, _imgWidth, _imgHeight, _imgSource);
+      var elements = _ocrEngine.GetElements(_imgWidth, _imgHeight, _imgSource);
       _grid = BoardFinder.FindBoard(_stream, _corners, elements);
       myGraphics.SetBoard(_grid);
       myView.Invalidate();

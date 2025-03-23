@@ -4,23 +4,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Plugin.Maui.OCR;
 using Microsoft.Maui.Platform;
+using Plugin.Maui.OCR;
 
-namespace Str8tsSolver
+namespace Str8tsSolver.Droid
 {
-  internal static class OcrResultValidation
+  public static class OcrResultValidation
   {
-    public enum ImgSource
-    {
-      Camera,
-      Screenshot,
-      Photo
-    }
-
     private static List<string> _valid = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
-    public static List<OcrResult.OcrElement> PickValidElements(OcrResult ocrResult) //, List<System.Drawing.Point> corners)
+    public static List<OcrResult.OcrElement> PickValidElements(OcrResult ocrResult)
     {
       return ocrResult.Elements.Where(e => _valid.Contains(e.Text.Trim())).ToList();
     }
@@ -67,13 +60,6 @@ namespace Str8tsSolver
     {
       return (x, y);
     }
-  }
-
-  public class GridValue
-  {
-    public char Value { get; set; }
-    public int X { get; set; }
-    public int Y { get; set; }
   }
 
   internal static class ViewHelper
