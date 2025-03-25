@@ -3,23 +3,24 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"    
              xmlns:drawable="clr-namespace:Str8tsSolver"
-             x:Class="Str8tsSolver.MainPage">
+             x:Class="Str8tsSolver.MainPage"
+             xmlns:layouts="clr-namespace:Str8tsSolver.Layouts"
+             Title="Str8tsSolver">
   <ContentPage.Resources>
     <drawable:BoardDrawable x:Key="drawable" x:Name="myGraphics"/>
   </ContentPage.Resources>
-  <ScrollView>
-    <AbsoluteLayout >
-      <HorizontalStackLayout Margin="0, 0, 5, 5" Spacing="10"  AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,0,360,45" >
-        <Button x:Name="OpenButton" Text="Open" Width="20" Clicked="OnOpenButtonClicked" Grid.Column="0"/>
-        <Button x:Name="ScanButton" Text="Scan" Width="20" Clicked="OnScanButtonClicked" Grid.Column="1"/>
-        <Button x:Name="AnalyzeButton" Text="Analyze" Width="20" Clicked="OnAnalyzeButtonClicked" Grid.Column="2"/>
-        <Button x:Name="SolveButton" Text="Solve" Width="20" Clicked="OnSolveButtonClicked" Grid.Column="3"/>
-      </HorizontalStackLayout>
-      <toolkit:CameraView x:Name="MyCamera" AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,46,360,480" MediaCaptured="MyCamera_ImageCaptured" />
-      <Image x:Name="CapturedImage" AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,46,360,480" Aspect="Fill" IsVisible="False"/>
-      <GraphicsView x:Name="myView" Drawable="{StaticResource drawable}" AbsoluteLayout.LayoutFlags="None" AbsoluteLayout.LayoutBounds="0,46,360,480" IsVisible="True"/>
-      <!--HeightRequest="500"-->
-    </AbsoluteLayout>    
-  </ScrollView>
+  <Border BackgroundColor="AliceBlue">
+    <layouts:ResponsiveGridLayout Margin="5">
+      <Button x:Name="OpenButton" Text="Open" Width="20" Clicked="OnOpenButtonClicked" />
+      <Button x:Name="ScanButton" Text="Scan" Width="20" Clicked="OnScanButtonClicked" />
+      <Button x:Name="AnalyzeButton" Text="Analyze" Width="20" Clicked="OnAnalyzeButtonClicked" />
+      <Button x:Name="SolveButton" Text="Solve" Width="20" Clicked="OnSolveButtonClicked" />
+
+      <toolkit:CameraView x:Name="MyCamera" MediaCaptured="MyCamera_ImageCaptured" />
+      <Image x:Name="CapturedImage" Aspect="Fill" IsVisible="False"/>
+      <GraphicsView x:Name="myView" Drawable="{StaticResource drawable}" IsVisible="True"/>
+
+    </layouts:ResponsiveGridLayout>    
+  </Border>
 
 </ContentPage>

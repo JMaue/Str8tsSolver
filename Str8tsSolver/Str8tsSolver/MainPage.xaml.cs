@@ -24,8 +24,6 @@ namespace Str8tsSolver
 
     private byte[] _stream;
     private IOcrDigitRecognizer _ocrEngine;
-    //private OcrResult _ocrResult;
-    //private OcrOptions _ocrOptions;
     private List<System.Drawing.Point> _corners;
 
     private char[,] _grid;
@@ -35,13 +33,10 @@ namespace Str8tsSolver
       InitializeComponent();
       _cameraProvider = cp;
       _contourFinder = new ContourFinder();
-      _ocrEngine = ocrEngine;
 
       MyCamera.MediaCaptured += MyCamera_ImageCaptured;
 
-      //var builder = new OcrOptions.Builder();
-      ////builder.AddPatternConfig(new OcrPatternConfig("[0..9]"));
-      //_ocrOptions = builder.Build();
+      _ocrEngine = ocrEngine;
       _ocrEngine.Initialize();
 
       CreateCaptureThread();
@@ -54,7 +49,7 @@ namespace Str8tsSolver
       base.OnAppearing();
       _viewWidth = myView.Width;
       _viewHeight = myView.Height;
-      _ocrEngine.Initialize();  //OcrPlugin.Default.InitAsync();
+      _ocrEngine?.Initialize(); 
     }
 
     protected async override void OnNavigatedTo(NavigatedToEventArgs args)
@@ -142,17 +137,6 @@ namespace Str8tsSolver
           _captureEvent.Set();
 
           _ocrEngine.ProcessImage(bytes);
-          //OcrResult? ocrResult = null;
-          //Task.Run(async () =>
-          //{
-          //  ocrResult = await OcrPlugin.Default.RecognizeTextAsync(bytes, _ocrOptions);
-          //}).Wait();
-
-          //if (ocrResult != null && ocrResult.Success && ocrResult.Elements.Count > 0)
-          //{
-          //  // capture the OCR results
-          //  _ocrResult = ocrResult;
-          //}
 
           // keep the image byte stream for image analysis, i.e. for finding black and white cells
           _stream = bytes;
@@ -254,11 +238,7 @@ namespace Str8tsSolver
             if (corners.Count > 0)
             {
               _ocrEngine.ProcessImage(imageAsBytes);
-              //var ocrResult = await OcrPlugin.Default.RecognizeTextAsync(imageAsBytes, _ocrOptions);
-              //if (ocrResult != null && ocrResult.Success && ocrResult.Elements.Count > 0)
-              //{
-              //  _ocrResult = ocrResult;
-              //}
+
               _stream = imageAsBytes;
               _corners = corners;
               Dispatcher.Dispatch(() => { ShowCapturedImage(imageAsBytes); });
@@ -283,7 +263,6 @@ namespace Str8tsSolver
       //{
       //  _imgSource = ImgSource.Photo;
       //}
-      //var elements = OcrResultValidation.GetValidElements(_ocrResult, _imgWidth, _imgHeight, _imgSource);
       var elements = _ocrEngine.GetElements(_imgWidth, _imgHeight, _imgSource);
       _grid = BoardFinder.FindBoard(_stream, _corners, elements);
       myGraphics.SetBoard(_grid);
