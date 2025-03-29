@@ -1,5 +1,7 @@
 ﻿using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Core.Primitives;
+using Microsoft.Maui.Platform;
+using Str8tsSolver.Layouts;
 using Str8tsSolverImageTools;
 using Str8tsSolverLib;
 
@@ -28,6 +30,8 @@ namespace Str8tsSolver
 
     private char[,] _grid;
 
+    private bool _isLandscape = false;
+
     public MainPage(ICameraProvider cp, IOcrDigitRecognizer ocrEngine)
     {
       InitializeComponent();
@@ -39,7 +43,16 @@ namespace Str8tsSolver
       _ocrEngine = ocrEngine;
       _ocrEngine.Initialize();
 
+      ResponsiveGridLayoutManager.OnOrientationChanged += OnOrientationChanged;
+
       CreateCaptureThread();
+    }
+
+    private void OnOrientationChanged(bool isLandscape)
+    {
+      ////if (MyCamera != null && MyCamera.SelectedCamera != null)
+      //  MyCamera.SelectedCamera = _cameraProvider.AvailableCameras
+      //      .Where(c => c.Position == CameraPosition.Rear).FirstOrDefault();
     }
 
     #region Maui Infrastructur

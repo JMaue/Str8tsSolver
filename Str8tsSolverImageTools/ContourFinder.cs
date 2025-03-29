@@ -44,7 +44,7 @@ namespace Str8tsSolverImageTools
       var allContourCandidates = new List<List<Point>>();
       var imgX = img.Cols;
       var imgY = img.Rows;
-      var minSquareSize = Math.Min(imgX, imgY) * 0.7;
+      var minSquareSize = Math.Min(imgX, imgY) * 0.5;
 
       // convert image to gray
       using (Mat gray = new Mat())
