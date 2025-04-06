@@ -38,6 +38,11 @@ namespace Str8tsSolver
 
     private double _scaleX;
     private double _scaleY;
+    private double _viewWidth;
+    private double _viewHeight;
+    private double _imgWidth;
+    private double _imgHeight;
+    private DisplayOrientation _orientation;
 
     private List<GridValue> _digits = new List<GridValue>();
     private ConcurrentBag<GridValue> _gridVals = new ConcurrentBag<GridValue>();
@@ -45,9 +50,7 @@ namespace Str8tsSolver
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
       if (_state == SolverState.None)
-      {
         return;
-      }
 
       canvas.FontSize = 20;
       canvas.StrokeSize = 2;
@@ -57,6 +60,7 @@ namespace Str8tsSolver
         canvas.FontSize = 10;
         canvas.FontColor = Colors.CornflowerBlue;
         canvas.DrawString($"Scanning {_counter}", 10, 10, HorizontalAlignment.Left);
+
 
         return;
       }
@@ -92,6 +96,7 @@ namespace Str8tsSolver
 
           for (int i = 0; i < 9; i++)
           {
+            canvas.StrokeColor = _solved ? Colors.Green : Colors.DarkOrange;
             for (int j = 0; j < 9; j++)
             {
               DrawLine(_cells[i, j].UpperLeft, _cells[i, j].UpperRight);
@@ -126,7 +131,43 @@ namespace Str8tsSolver
       void DrawLine(System.Drawing.Point a, System.Drawing.Point b) => canvas.DrawLine((float)a.X, (float)a.Y, (float)b.X, (float)b.Y);
     }
     
-    internal void SetBoardContour (List<System.Drawing.Point> corners, double viewWidth, double viewHeight, int imageWidth, int imageHeight)
+    public void SetViewDimensions (double width, double height, DisplayOrientation orientation)
+    {
+      _viewWidth = width;
+      _viewHeight = height;
+    }
+
+    public void SetImageDimensions(int width, int height, DisplayOrientation orientation)
+    {
+      _imgWidth = width;
+      _imgHeight = height;
+      _scaleX = _viewWidth / _imgWidth;
+      _scaleY = _viewHeight / _imgHeight;
+      _orientation = orientation;
+    }
+
+    public void OnOrientationChanged(DisplayOrientation orientation)
+    {
+      var oldWidth = _viewWidth;
+      var oldHeight = _viewHeight;
+      _viewWidth = _viewHeight;
+      _viewHeight = oldWidth;
+
+      //_scaleX = _viewWidth / _imgWidth;
+      //_scaleY = _viewHeight / _imgHeight;
+
+      _board?.OnOrientationChanged(_viewWidth / oldWidth, _viewHeight / oldHeight);
+
+      for (int i = 0; i < 9; i++)
+      {
+        for (int j = 0; j < 9; j++)
+        {
+          _cells[i, j]?.OnOrientationChanged(_viewWidth / oldWidth, _viewHeight / oldHeight);
+        }
+      }
+    }
+
+    internal void SetBoardContour (List<System.Drawing.Point> corners)
     {
       if (corners.Count != 4)
       {
@@ -135,8 +176,8 @@ namespace Str8tsSolver
       }
 
       // Berechnen der Skalierungsfaktoren
-      _scaleX = viewWidth / imageWidth;
-      _scaleY = viewHeight / imageHeight;
+      //_scaleX = _viewWidth / imageWidth;
+      //_scaleY = _viewHeight / imageHeight;
 
       _board = new Square { UpperLeft = corners[0], UpperRight = corners[1], LowerRight = corners[2], LowerLeft = corners[3] };
       _board.ScaleToView(_scaleX, _scaleY);

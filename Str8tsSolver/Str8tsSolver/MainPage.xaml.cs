@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Core.Primitives;
-using Microsoft.Maui.Platform;
+using Microsoft.Maui.Devices;
 using Str8tsSolver.Layouts;
 using Str8tsSolverImageTools;
 using Str8tsSolverLib;
@@ -21,6 +21,8 @@ namespace Str8tsSolver
 
     private int _imgWidth;
     private int _imgHeight;
+    private DisplayOrientation _orientation;
+
     private ImgSource _imgSource;
     private ContourFinder _contourFinder;
 
@@ -30,29 +32,20 @@ namespace Str8tsSolver
 
     private char[,] _grid;
 
-    private bool _isLandscape = false;
-
     public MainPage(ICameraProvider cp, IOcrDigitRecognizer ocrEngine)
     {
       InitializeComponent();
       _cameraProvider = cp;
       _contourFinder = new ContourFinder();
 
-      MyCamera.MediaCaptured += MyCamera_ImageCaptured;
+      myCamera.MediaCaptured += ImageCaptured;
 
       _ocrEngine = ocrEngine;
       _ocrEngine.Initialize();
 
-      ResponsiveGridLayoutManager.OnOrientationChanged += OnOrientationChanged;
+      DeviceDisplay.MainDisplayInfoChanged += OnMainDisplayInfoChanged;
 
       CreateCaptureThread();
-    }
-
-    private void OnOrientationChanged(bool isLandscape)
-    {
-      ////if (MyCamera != null && MyCamera.SelectedCamera != null)
-      //  MyCamera.SelectedCamera = _cameraProvider.AvailableCameras
-      //      .Where(c => c.Position == CameraPosition.Rear).FirstOrDefault();
     }
 
     #region Maui Infrastructur
@@ -60,8 +53,11 @@ namespace Str8tsSolver
     protected async override void OnAppearing()
     {
       base.OnAppearing();
-      _viewWidth = myView.Width;
-      _viewHeight = myView.Height;
+
+      _viewWidth = drawArea.Width;
+      _viewHeight = drawArea.Height;
+      _orientation = DeviceDisplay.MainDisplayInfo.Orientation;
+
       _ocrEngine?.Initialize(); 
     }
 
@@ -70,7 +66,7 @@ namespace Str8tsSolver
       base.OnNavigatedTo(args);
 
       await _cameraProvider.RefreshAvailableCameras(CancellationToken.None);
-      MyCamera.SelectedCamera = _cameraProvider.AvailableCameras
+      myCamera.SelectedCamera = _cameraProvider.AvailableCameras
           .Where(c => c.Position == CameraPosition.Rear).FirstOrDefault();
     }
 
@@ -78,13 +74,19 @@ namespace Str8tsSolver
     {
       base.OnNavigatedFrom(args);
 
-      MyCamera.MediaCaptured -= MyCamera_ImageCaptured;
-      MyCamera.Handler?.DisconnectHandler();
+      myCamera.MediaCaptured -= ImageCaptured;
+      myCamera.Handler?.DisconnectHandler();
 
       // Worker-Thread stoppen
       _cancellationTokenSource.Cancel();
       _captureEvent.Set();
     }
+
+    private void OnMainDisplayInfoChanged(object? sender, DisplayInfoChangedEventArgs e)
+    {
+      myGraphics.OnOrientationChanged(e.DisplayInfo.Orientation);
+    }
+    
     #endregion
 
     private void CreateCaptureThread()
@@ -107,12 +109,13 @@ namespace Str8tsSolver
     {
       Thread.Sleep(10);
       LogToFile($"Thread: CaptureImagesPeriodically started");
-      _viewWidth = myView.Width;
-      _viewHeight = myView.Height;
+      _viewWidth = drawArea.Width;
+      _viewHeight = drawArea.Height;
+      myGraphics.SetViewDimensions(_viewWidth, _viewHeight, _orientation);
       while (!token.IsCancellationRequested)
       {
         LogToFile($"Thread: CaptureImagesPeriodically ");
-        MyCamera.CaptureImage(CancellationToken.None);
+        myCamera.CaptureImage(CancellationToken.None);
 
         // do not continue here until the image is captured
         _captureEvent.Reset();
@@ -123,7 +126,7 @@ namespace Str8tsSolver
       LogToFile($"Thread: CaptureImagesPeriodically ended");
     }
 
-    private void MyCamera_ImageCaptured(object? sender, CommunityToolkit.Maui.Views.MediaCapturedEventArgs e)
+    private void ImageCaptured(object? sender, CommunityToolkit.Maui.Views.MediaCapturedEventArgs e) 
     {
       string currentThreadName = Thread.CurrentThread.Name;
       var bytes = ReadFromStream(e.Media);
@@ -136,6 +139,8 @@ namespace Str8tsSolver
       {
         // find the outer contour of the board
         var corners = _contourFinder.FindExternalContour(bytes, out _imgWidth, out _imgHeight);
+        myGraphics.SetImageDimensions(_imgWidth, _imgHeight, _orientation);
+
         LogToFile($"Thread: {currentThreadName} - Corners: {corners.Count}");
         if (corners.Count == 0)
         {
@@ -146,7 +151,7 @@ namespace Str8tsSolver
         {       
           // stop the capture thread
           _cancellationTokenSource.Cancel();
-          myView.Invalidate();
+          drawArea.Invalidate();
           _captureEvent.Set();
 
           _ocrEngine.ProcessImage(bytes);
@@ -156,7 +161,7 @@ namespace Str8tsSolver
 
           // keep the corners for drawing the board contour
           _corners = corners;
-          myGraphics.SetBoardContour(corners, _viewWidth, _viewHeight, _imgWidth, _imgHeight);
+          myGraphics.SetBoardContour(corners);
 
           // enable buttons on the UI
           Dispatcher.Dispatch(() => {
@@ -172,17 +177,17 @@ namespace Str8tsSolver
       {
         myGraphics.InvalidatePosition(_counter, ex.Message);
       }
-      myView.Invalidate();
+      drawArea.Invalidate();
       _captureEvent.Set();
     }
 
 
     private void ShowCapturedImage(byte[] imageBytes)
     {
-      MyCamera.IsVisible = false;  // turn off live view
+      myCamera.IsVisible = false;  // turn off live view
 
-      CapturedImage.IsVisible = true;
-      CapturedImage.Source = ImageSource.FromStream(() => new MemoryStream(imageBytes));
+      capturedImage.IsVisible = true;
+      capturedImage.Source = ImageSource.FromStream(() => new MemoryStream(imageBytes));
     }
 
     private byte[] ReadFromStream(Stream stream)
@@ -213,12 +218,12 @@ namespace Str8tsSolver
       {
         CreateCaptureThread();
       }
-      MyCamera.IsVisible = true;
-      CapturedImage.IsVisible = false;
+      myCamera.IsVisible = true;
+      capturedImage.IsVisible = false;
       _imgSource = ImgSource.Camera;
 
       ResetVars();
-      myView.Invalidate();
+      drawArea.Invalidate();
 
       _captureThread.Start();
     }
@@ -226,11 +231,12 @@ namespace Str8tsSolver
     private void OnOpenButtonClicked(object sender, EventArgs e)
     {
       // read image from file
-      _viewWidth = myView.Width;
-      _viewHeight = myView.Height;
+      _viewWidth = drawArea.Width;
+      _viewHeight = drawArea.Height;
+      myGraphics.SetViewDimensions(_viewWidth, _viewHeight, _orientation);
 
       ResetVars();
-      myView.Invalidate();
+      drawArea.Invalidate();
 
       EnableScanButton(true);
       EnableAnalyzeButton(true);
@@ -247,7 +253,8 @@ namespace Str8tsSolver
             using var imageAsStream = await pickResult.OpenReadAsync();
             var imageAsBytes = new byte[imageAsStream.Length];
             Task.Run(async () => await imageAsStream.ReadAsync(imageAsBytes)).Wait();
-            var corners = _contourFinder.FindExternalContour(imageAsBytes, out int width, out int heigth);
+            var corners = _contourFinder.FindExternalContour(imageAsBytes, out _imgWidth, out _imgHeight);
+            myGraphics.SetImageDimensions(_imgWidth, _imgHeight, _orientation);
             if (corners.Count > 0)
             {
               _ocrEngine.ProcessImage(imageAsBytes);
@@ -255,8 +262,8 @@ namespace Str8tsSolver
               _stream = imageAsBytes;
               _corners = corners;
               Dispatcher.Dispatch(() => { ShowCapturedImage(imageAsBytes); });
-              myGraphics.SetBoardContour(corners, _viewWidth, _viewHeight, width, heigth);
-              myView.Invalidate();
+              myGraphics.SetBoardContour(corners); //, _viewWidth, _viewHeight, width, heigth);
+              drawArea.Invalidate();
             }
           }
         }
@@ -266,8 +273,8 @@ namespace Str8tsSolver
         }
       });
 
-      MyCamera.IsVisible = false;
-      CapturedImage.IsVisible = true;
+      myCamera.IsVisible = false;
+      capturedImage.IsVisible = true;
     }
 
     private void OnAnalyzeButtonClicked(object sender, EventArgs args)
@@ -279,7 +286,7 @@ namespace Str8tsSolver
       var elements = _ocrEngine.GetElements(_imgWidth, _imgHeight, _imgSource);
       _grid = BoardFinder.FindBoard(_stream, _corners, elements);
       myGraphics.SetBoard(_grid);
-      myView.Invalidate();
+      drawArea.Invalidate();
 
       EnableSolveButton(true);
     }
@@ -303,19 +310,19 @@ namespace Str8tsSolver
     private void Board_SolvingProgress(string currStr8t)
     {
       myGraphics.SolvingProgress(currStr8t);
-      myView.Invalidate();
+      drawArea.Invalidate();
     }
 
     private void Board_PuzzleSolved(bool success)
     {
       myGraphics.PuzzleSolved(success); 
-      myView.Invalidate();
+      drawArea.Invalidate();
     }
 
     private void Board_PositionSolved(int x, int y, char newValue)
     {
       myGraphics.PositionSolved(x, y, newValue);
-      myView.Invalidate();
+      drawArea.Invalidate();
       Thread.Sleep(10);
     }
     #endregion region

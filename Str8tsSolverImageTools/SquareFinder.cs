@@ -131,6 +131,19 @@ namespace Str8tsSolverImageTools
       LowerRight = new Point((int)(LowerRight.X * scaleX), (int)(LowerRight.Y * scaleY));
     }
 
+    public void OnOrientationChanged(double widthRatio, double heightRatio)
+    {
+      (int, int) convert (Point p) { return ((int)(p.X * widthRatio), (int)(p.Y * heightRatio)); }
+      var (x, y) = convert(UpperLeft);
+      UpperLeft = new Point(x, y);
+      (x, y) = convert(UpperRight);
+      UpperRight = new Point(x, y);
+      (x, y) = convert (LowerLeft);
+      LowerLeft = new Point(x, y);
+      (x, y) = convert(LowerRight);
+      LowerRight = new Point(x, y);
+    }
+
     public Square[,] SplitIntoCells(int row, int cols)
     {
       var res = new Square[9, 9];

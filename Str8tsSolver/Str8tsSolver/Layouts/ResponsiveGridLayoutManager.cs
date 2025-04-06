@@ -11,8 +11,6 @@ namespace Str8tsSolver.Layouts
   {
     private ResponsiveGridLayout _layout;
 
-    public static event Action<bool> OnOrientationChanged;
-
     public bool _isLandscape { get; set; }
 
     public ResponsiveGridLayoutManager (ResponsiveGridLayout layout) 
@@ -22,13 +20,7 @@ namespace Str8tsSolver.Layouts
 
     public Size Measure (double widthConstraint, double heightConstraint)
     {
-      bool isLandscape = widthConstraint > heightConstraint;
-      if (_isLandscape != isLandscape)
-      {
-        _isLandscape = isLandscape;
-        OnOrientationChanged?.Invoke(_isLandscape);
-      }
-
+      _isLandscape = widthConstraint > heightConstraint;
       foreach (var child in _layout)
       {
         var current = child.Measure (widthConstraint, heightConstraint);

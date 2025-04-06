@@ -16,9 +16,9 @@
       <Button x:Name="AnalyzeButton" Text="Analyze" Width="20" Clicked="OnAnalyzeButtonClicked" />
       <Button x:Name="SolveButton" Text="Solve" Width="20" Clicked="OnSolveButtonClicked" />
 
-      <toolkit:CameraView x:Name="MyCamera" MediaCaptured="MyCamera_ImageCaptured" />
-      <Image x:Name="CapturedImage" Aspect="Fill" IsVisible="False"/>
-      <GraphicsView x:Name="myView" Drawable="{StaticResource drawable}" IsVisible="True"/>
+      <toolkit:CameraView x:Name="myCamera" MediaCaptured="ImageCaptured" />
+      <Image x:Name="capturedImage" Aspect="Fill" IsVisible="False"/>
+      <GraphicsView x:Name="drawArea" Drawable="{StaticResource drawable}" IsVisible="True"/>
 
     </layouts:ResponsiveGridLayout>    
   </Border>
