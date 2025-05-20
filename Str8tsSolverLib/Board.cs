@@ -65,7 +65,7 @@ namespace Str8tsSolverLib
       return grid;
     }
 
-    public Cell[,] IsolateSureCandidates(bool columns)
+    public Cell[,] IsolateSureCandidatesInColumns()
     {
       var grid = CloneGrid();
       var dict = new Dictionary<int, List<char>>();
@@ -79,7 +79,28 @@ namespace Str8tsSolverLib
 
         for (int r = 0; r < 9; r++)
         {
-          grid[r, i].Candidates.RemoveAll(c => !cc.Contains((char)c));
+          grid[r, i].Candidates.RemoveAll(c => !cc.Contains(c));
+        }
+      }
+
+      return grid;
+    }
+
+    public Cell[,] IsolateSureCandidatesInRow()
+    {
+      var grid = CloneGrid();
+      var dict = new Dictionary<int, List<char>>();
+      for (int i = 0; i < 9; i++)
+      {
+        var row = Rows.Find(r => r.IsHorizontal && r.Idx == i);
+        var certainCandidates = row.Str8ts.SelectMany(s => s.CertainCells()).ToList();
+
+        certainCandidates.AddRange(row.GetCertainCandidatesFromSize());
+        var cc = certainCandidates.Distinct();
+
+        for (int c = 0; c < 9; c++)
+        {
+          grid[i, c].Candidates.RemoveAll(r => !cc.Contains(r));
         }
       }
 

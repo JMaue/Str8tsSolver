@@ -2,14 +2,12 @@ using Str8tsSolverLib;
 
 namespace Str8tsSolverTest
 {
-  public class BoardTests
+  public class BoardTests : BoardTestBase
   {
-    ITxtOut _txtOut;
-
     [SetUp]
     public void Setup()
     {
-      _txtOut = new ConsoleTxtOut();
+      base.Setup();
     }
 
     [Test]
@@ -268,44 +266,5 @@ namespace Str8tsSolverTest
       }));
     }
 
-    private bool Solve(char[,] b)
-    {
-      var board = new Board(b, _txtOut);
-      board.ReadBoard();
-      board.PrintBoard(true);
-      var (solved, iterations) = Str8tsSolver.Solve(board, _txtOut);
-      return solved;
-    }
-
-    private char[,] LoadBoardFromFile(string filePath)
-    {
-      var board = new char[9, 9];
-      var lines = File.ReadAllLines(filePath);
-
-      for (int i = 0; i < lines.Length; i++)
-      {
-        for (int j = 0; j < lines[i].Length; j++)
-        {
-          var v = lines[i][j];
-          board[i, j] = v == '.' ? ' ' : v;
-        }
-      }
-
-      return board;
-    }
-
-    public static IEnumerable<string> GetTestFiles()
-    {
-      return Directory.GetFiles(@"..\\..\\..\\Samples_derwesten\", "board_*.txt");
-    }
-
-    [Test]
-    [TestCaseSource(nameof(GetTestFiles))]
-   public void SolveBoards(string file)
-    {
-        var board = LoadBoardFromFile(file);
-        var solved = Solve(board);
-        Assert.IsTrue(solved);
-    }
   }
 }

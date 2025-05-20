@@ -26,11 +26,11 @@
         var candidates = new List<char[]>();
         foreach (var o in Permutations.Permute (options.ToArray(), 0, pos.Count))
         {
-          var nextTry = str8t.Cells;
-          for (int i = 0; i < cnt; i++)
-          {
-            nextTry = ReplaceFirst(nextTry, ' ', o[i]);
-          }
+          var nextTry = str8t.CellsOptions (o);
+          //for (int i = 0; i < cnt; i++)
+          //{
+          //  nextTry = ReplaceFirst(nextTry, ' ', o[i]);
+          //}
           if (Str8t.IsValid(nextTry) && IsValid(board, str8t, nextTry))
           {
             candidates.Add(o);
@@ -66,15 +66,15 @@
       return success;
     }
 
-    public static string ReplaceFirst(string text, char search, char replace)
-    {
-      int pos = text.IndexOf(search);
-      if (pos < 0)
-      {
-        return text;
-      }
-      return text.Substring(0, pos) + replace + text.Substring(pos + 1);
-    }
+    //public static string ReplaceFirst(string text, char search, char replace)
+    //{
+    //  int pos = text.IndexOf(search);
+    //  if (pos < 0)
+    //  {
+    //    return text;
+    //  }
+    //  return text.Substring(0, pos) + replace + text.Substring(pos + 1);
+    //}
   }
 
 }

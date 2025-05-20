@@ -1,4 +1,4 @@
-﻿using Str8tsSolverLib.Algorithms;
+﻿using Str8tsSolverLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;

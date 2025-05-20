@@ -60,8 +60,8 @@ namespace Str8tsSolverLib
         if (Str8ts[0].Len == 4) // || Str8ts[0].Len == 4)
           return new List<char> { '2', '3', '4', '6', '7', '8' };
       }
-      if (NoOfBlackCells == 2 && NoOfStr8ts == 3)
-        return new List<char> { '1', '2', '5', '8', '7', '9' };
+      //if (NoOfBlackCells == 2 && NoOfStr8ts == 3)
+      //  return new List<char> { '1', '2', '5', '8', '7', '9' };
 
       // todo : 3 black cells and 2 rows
       return new List<char>();

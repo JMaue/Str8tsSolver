@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Str8tsSolverLib.Algorithms
+namespace Str8tsSolverLib
 {
   public class ExcludeWings : IAlgorithm
   {
@@ -13,7 +13,7 @@ namespace Str8tsSolverLib.Algorithms
       bool progress = false;
 
       // from columns
-      var grid = board.IsolateSureCandidates(false);
+      var grid = board.IsolateSureCandidatesInColumns();
       for (char digit = '1'; digit <= '9'; digit++)
       {
         var (keep, remove) = FindWingsInColumns(grid, digit);
@@ -39,10 +39,11 @@ namespace Str8tsSolverLib.Algorithms
         }
       }
 
-      return progress;
+    //return progress;
 
       // from rows
-      grid = board.IsolateSureCandidates(true);
+      grid = board.IsolateSureCandidatesInRow();
+      board.PrintBoard (grid);
       for (char digit = '1'; digit <= '9'; digit++)
       {
         var (keep, remove) = FindWingsInRows(grid, digit);
@@ -192,7 +193,7 @@ namespace Str8tsSolverLib.Algorithms
         for (int c = 0; c < 9; c++)
         {
           if (grid[r, c].Candidates.Contains(digit))
-            row.Add(r);
+            row.Add(c);
         }
         if (row.Count > 1)
           candidatesPerRow.Add(r, row);

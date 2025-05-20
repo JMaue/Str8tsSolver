@@ -1,9 +1,9 @@
-$startDate = Get-Date
 $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-$baseUrl = "https://www.str8ts.com/feed/derwesten/ASStr8tsv2.asp"
-$outputBasePath = "D:\Jens\Repositories\Str8tsSolver\Str8tsSolverTest\DerWesten"
-$targetBasePath = ".\Samples_DerWesten"
+$baseUrl = "https://www.str8ts.com/Players/ASStr8tsASPX.aspx"
+$outputBasePath = "D:\repos\MyStr8ts\Str8tsSolver\Str8tsSolverTest\Extreme"
+$targetBasePath = ".\WeeklyExtremes"
 
+# https://www.str8ts.com/Players/ASStr8tsASPX.aspx?wp=775
 function Get-Str8tsBoard {
     param (
         [Parameter(Mandatory = $true)]
@@ -36,7 +36,10 @@ function Get-Str8tsBoard {
         if ($cell.id -match "C(\d)(\d)") {
             $row = [int]$Matches[1]
             $col = [int]$Matches[2]
-            $value = $cell.innerText.Trim()
+            $value = ' '
+            if ($null -ne $cell.innerText) {
+              $value = $cell.innerText.Trim()
+            }
            
             # Convert empty cells to spaces
             if ([string]::IsNullOrEmpty($value)) {
@@ -81,31 +84,40 @@ function Show-Str8tsBoard {
         Write-Output $row
     }
 }
- 
-for ($d = 0; $d -lt 30; $d++) {
-    $currentDate = $startDate.AddDays(-$d)
-    $dateStr = $currentDate.ToString("yyyy-MM-dd")
-    Write-Output $dateStr
-    & $chromePath --headless --dump-dom "$baseUrl`?d=$i" | echo > "$outputBasePath\$dateStr.txt"
- 
-    $board = Get-Str8tsBoard -FilePath "$outputBasePath\$dateStr.txt"
+function Write-BoardToFile {
+    param (
+        [string[]]$board,
+        [string]$targetFilePath
+    )
 
-    Show-Str8tsBoard -board $board
-
-    # Save board to file
     $boardText = @()
     for ($i = 0; $i -lt 9; $i++) {
         $row = ""
         for ($j = 0; $j -lt 9; $j++) {
             $c = $board[$i*9+$j]
             if ($c -eq ' ') {
-              $c = '.'
+                $c = '.'
             }
             $row += $c
         }
         $boardText += $row
     }
-    $boardText | Out-File -FilePath "$targetBasePath\board_$dateStr.txt"
+    $boardText | Out-File -FilePath $targetFilePath
+}
+
+for ($d = 775; $d -lt 776; $d++) {
+
+    Write-Output $d
+ 
+    & $chromePath --headless --dump-dom --disable-gpu --virtual-time-budget=10000  "$baseUrl`?wp=$d" | Set-Content -Path "$outputBasePath\$d.txt"
+ 
+    $board = Get-Str8tsBoard -FilePath "$outputBasePath\$d.txt"
+
+    Show-Str8tsBoard -board $board
+
+    # Save board to file
+    Write-BoardToFile -board $board -targetFilePath "$targetBasePath\board_$d.txt"
+   # $boardText | Out-File -FilePath "$targetBasePath\board_$d.txt"
 }
  
 Write-Output "Done"

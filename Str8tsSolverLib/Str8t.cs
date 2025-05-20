@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Schema;
 
 namespace Str8tsSolverLib
 {
@@ -29,6 +30,7 @@ namespace Str8tsSolverLib
     public List<Cell> Members { get; set; }
     public abstract (int, int) CellPos(int pos);
     public abstract string Cells { get; }
+    public abstract string CellsOptions(char[] options);
     public abstract List<Str8t> PerpendicularStr8ts();
 
     public bool Contains(int x, int y) => x == _x && _y.Contains(y);
@@ -150,11 +152,11 @@ namespace Str8tsSolverLib
       var candidates = new List<char[]>();
       foreach (var o in Permutations.Permute(options))
       {
-        var nextTry = Cells;
-        for (int i = 0; i < o.Length; i++)
-        {
-          nextTry = Str8tsSolver.ReplaceFirst(nextTry, ' ', o[i]);
-        }
+        var nextTry = CellsOptions (o);
+        //for (int i = 0; i < o.Length; i++)
+        //{
+        //  nextTry = Str8tsSolver.ReplaceFirst(nextTry, ' ', o[i]);
+        //}
         if (IsValid(nextTry))
         {
           candidates.Add(o);
@@ -320,6 +322,18 @@ namespace Str8tsSolverLib
     public override bool IsVertical => false;
 
     public override string Cells => string.Join("", _y.Select(c => _board._board[_x, c]));
+    public override string CellsOptions(char[] options)
+    {
+        int cnt = 0;
+        return string.Join("", _y.Select(c =>
+        {
+          char v = _board._board[_x, c];
+          if (cnt >= options.Length)
+            return v;
+          return v != ' ' ? v : options[cnt++];
+        }));
+    }
+
     public override List<Str8t> PerpendicularStr8ts() => Members.Where(m => m.Vertical != null).Select(m => m.Vertical).ToList();
 
     public override List<char> GetValuesInRowOrCol()
@@ -361,6 +375,17 @@ namespace Str8tsSolverLib
       return $"V{pos}:{cells}";
     }
     public override string Cells => string.Join("", _y.Select(c => _board._board[c, _x]));
+    public override string CellsOptions(char[] options)
+    {
+      int cnt = 0;
+      return string.Join("", _y.Select(c =>
+      {
+        char v = _board._board[c, _x];
+        if (cnt >= options.Length)
+          return v;
+        return v != ' ' ? v : options[cnt++];
+      }));
+    }
     public override List<Str8t> PerpendicularStr8ts() => Members.Where(m => m.Horizontal != null).Select(m => m.Horizontal).ToList();
     public override bool IsHorizontal => false;
     public override bool IsVertical => true;

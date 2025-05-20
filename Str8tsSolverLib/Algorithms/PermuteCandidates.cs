@@ -38,12 +38,13 @@ namespace Str8tsSolverLib
         }
         var candidates = new List<char[]>();
         foreach (var o in Permutations.Permute (options))
-        { 
-          var nextTry = str8t.Cells;
-          for (int i = 0; i < cnt; i++)
-          {
-            nextTry = Str8tsSolver.ReplaceFirst(nextTry, ' ', o[i]);
-          }
+        {
+          var nextTry = str8t.CellsOptions(o);
+          //var nextTry = str8t.Cells;
+          //for (int i = 0; i < cnt; i++)
+          //{
+          //  nextTry = Str8tsSolver.ReplaceFirst(nextTry, ' ', o[i]);
+          //}
           if (Str8t.IsValid(nextTry) && str8t.IsValidInRowOrColumn(nextTry) && IsValid(board, str8t, nextTry))
           {
             candidates.Add(o);

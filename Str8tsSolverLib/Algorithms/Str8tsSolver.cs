@@ -1,5 +1,4 @@
-﻿using Str8tsSolverLib.Algorithms;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -26,15 +25,6 @@ namespace Str8tsSolverLib
 
   public static class Str8tsSolver
   {
-    public static string ReplaceFirst(string text, char search, char replace)
-    {
-      int pos = text.IndexOf(search);
-      if (pos < 0)
-      {
-        return text;
-      }
-      return text.Substring(0, pos) + replace + text.Substring(pos + 1);
-    }
 
     public static List<char> FindIntersection(List<char[]> charArrays)
     {
