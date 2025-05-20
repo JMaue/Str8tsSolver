@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Str8tsSolverLib.Algorithms;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -58,14 +59,14 @@ namespace Str8tsSolverLib
       {
         //new SingleGapInStr8t(),
         new PermuteOptions(),
-        new PermuteCandidates()
-        //new ExcludeNakedPairs()
+        new PermuteCandidates(),
+        new ExcludeWings()
       };
       bool progress;
       do
       {
         progress = false;
-        var alg = iterations == 0 ? algorithms[0] : algorithms[1];
+        var alg = iterations == 0 ? algorithms[0] :  iterations % 2 != 0 ? algorithms[1] : algorithms[1];
         //foreach (var alg in algorithms)
         {
           var sortedStr8ts = board.Str8ts.OrderBy(s => s.Len).ToList();
@@ -86,8 +87,16 @@ namespace Str8tsSolverLib
 
         iterations++;
 
-      } while (progress || iterations == 1);
+        if (!progress)
+        {
+          alg = algorithms[2];
+          iterations++;
+          progress = alg.Solve(board, board.Str8ts[0]);
+          txtOut?.WriteLine($"Algorithm {alg.GetType().Name} finished. Iterations:{iterations}, Progress:{progress}");
+        }
 
+      } while (progress || iterations == 1);
+      
       return (board.Finish(), iterations);
     }
   }

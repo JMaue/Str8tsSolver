@@ -82,7 +82,7 @@ function Show-Str8tsBoard {
     }
 }
  
-for ($d = 0; $d -lt 10; $d++) {
+for ($d = 0; $d -lt 30; $d++) {
     $currentDate = $startDate.AddDays(-$d)
     $dateStr = $currentDate.ToString("yyyy-MM-dd")
     Write-Output $dateStr
@@ -105,7 +105,7 @@ for ($d = 0; $d -lt 10; $d++) {
         }
         $boardText += $row
     }
-    $boardText | Out-File -FilePath "$targetBasePath\board_$dateStr`.txt"
+    $boardText | Out-File -FilePath "$targetBasePath\board_$dateStr.txt"
 }
  
 Write-Output "Done"

@@ -61,9 +61,9 @@ namespace Str8tsSolverLib
     public Str8t? Horizontal { get; set; }
     public Str8t? Vertical { get; set; }
 
-    public List<int> Candidates = new List<int>();
+    public List<char> Candidates = new List<char>();
 
-    internal bool UpdateCandidates(List<int> list)
+    internal bool UpdateCandidates(List<char> list)
     {
       var noOfCandidates = Candidates.Count;
       if (Candidates.Count == 0 && Value == ' ')
@@ -84,7 +84,15 @@ namespace Str8tsSolverLib
       if (Candidates.Count == 0)
         return false;
 
-      return Candidates.All(c => values.Contains((char)c));
+      return Candidates.All(c => values.Contains(c));
+    }
+
+    internal Cell Clone()
+    {
+      var c = new Cell(Row, Col, _getChar);
+      c.Candidates = new List<char>(Candidates);
+
+      return c;
     }
   }
 }

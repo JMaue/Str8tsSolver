@@ -21,6 +21,7 @@ namespace Str8tsSolverLib
       _board = board;
       Members = new List<Cell>();
     }
+
     public int Len => _y.Count;
     public int StartPos => _y.Min();
     public int EndPos => _y.Min() + Len;
@@ -133,6 +134,7 @@ namespace Str8tsSolverLib
     }
 
     public abstract List<Str8t> GetPerpendicularStr8ts(Cell m);
+    public abstract Str8t? GetPerpendicularStr8t(Cell m);
 
     public List<char> CertainCellsByIntersection ()
     {
@@ -188,6 +190,9 @@ namespace Str8tsSolverLib
         return rc;
       }
 
+      if (Len == 9)
+        return Enumerable.Range(1, Len).Select(i => (char)(i + '0')).ToList(); ;
+      
       // one of the solved cells is at the end of the Str8t
       if (solved.Contains('1'))
         return Enumerable.Range(1, Len).Select(i => (char)(i + '0')).ToList();
@@ -282,12 +287,28 @@ namespace Str8tsSolverLib
 
     public abstract bool IsHorizontal { get; }
     public abstract bool IsVertical { get; }
+
+    public virtual string GetId() => $"{_x}:{string.Join("-", _y)}";
+
+    internal void RemoveUnsureCandidates(List<char> sureCandidates)
+    {
+      foreach (var m in Members)
+      {
+        if (m.Value == ' ')
+        {
+          m.Candidates.RemoveAll(c => !sureCandidates.Contains((char)c));
+        }
+      }
+    }
   }
 
   public class HStr8t : Str8t
   {
     public HStr8t(int r, int c, Board b) : base(r, c, b) { }
+
     public override (int, int) CellPos(int pos) => (_x, _y[pos]);
+    
+    public override string GetId() => $"H{base.GetId()}";
     public override string ToString()
     {
       var cells = string.Join("", _y.Select(c => _board._board[_x, c] == ' ' ? '.' : _board._board[_x,c]));
@@ -323,6 +344,8 @@ namespace Str8tsSolverLib
         str8ts.AddRange(row.Str8ts);
       return str8ts;
     }
+
+    public override Str8t? GetPerpendicularStr8t(Cell m) => m.Vertical;
   }
 
   public class VStr8t : Str8t
@@ -330,6 +353,7 @@ namespace Str8tsSolverLib
     public VStr8t(int r, int c, Board b) : base(r, c, b) { }
 
     public override (int, int) CellPos(int pos) => (_y[pos], _x);
+    public override string GetId() => $"V{base.GetId()}";
     public override string ToString()
     {
       var cells = string.Join("", _y.Select(c => _board._board[c, _x] == ' ' ? '.' : _board._board[c, _x]));
@@ -364,5 +388,7 @@ namespace Str8tsSolverLib
         str8ts.AddRange(row.Str8ts);
       return str8ts;
     }
+
+    public override Str8t? GetPerpendicularStr8t(Cell m) => m.Horizontal;
   }
 }

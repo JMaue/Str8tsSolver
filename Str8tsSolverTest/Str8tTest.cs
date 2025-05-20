@@ -25,8 +25,8 @@ namespace Str8tsSolverTest
       var board = new Board(_board);
       board.ReadBoard();
       var str8t = board.Str8ts[0];
-      str8t.Members[1].Candidates = new List<int> { '2', '3' };
-      str8t.Members[2].Candidates = new List<int> { '2', '3' };
+      str8t.Members[1].Candidates = new List<char> { '2', '3' };
+      str8t.Members[2].Candidates = new List<char> { '2', '3' };
       var np = str8t.GetNakedPairs();
       Assert.AreEqual(2, np.Count);
       Assert.IsTrue(np.Contains('2'));
@@ -39,9 +39,9 @@ namespace Str8tsSolverTest
       var board = new Board(_board);
       board.ReadBoard();
       var str8t = board.Str8ts[2];
-      str8t.Members[0].Candidates = new List<int> { '1', '3', '4' };
-      str8t.Members[1].Candidates = new List<int> { '1', '3', '4' };
-      str8t.Members[3].Candidates = new List<int> { '1', '3', '4' };
+      str8t.Members[0].Candidates = new List<char> { '1', '3', '4' };
+      str8t.Members[1].Candidates = new List<char> { '1', '3', '4' };
+      str8t.Members[3].Candidates = new List<char> { '1', '3', '4' };
 
       var np = str8t.GetNakedPairs();
       Assert.AreEqual(3, np.Count);
@@ -56,10 +56,10 @@ namespace Str8tsSolverTest
       var board = new Board(_board);
       board.ReadBoard();
       var str8t = board.Str8ts[1];
-      str8t.Members[0].Candidates = new List<int> { '5', '8', '7', '6' };
-      str8t.Members[1].Candidates = new List<int> { '5', '8', '7', '6' };
-      str8t.Members[2].Candidates = new List<int> { '8', '7', '6', '5' };
-      str8t.Members[3].Candidates = new List<int> { '6', '5', '8', '7' };
+      str8t.Members[0].Candidates = new List<char> { '5', '8', '7', '6' };
+      str8t.Members[1].Candidates = new List<char> { '5', '8', '7', '6' };
+      str8t.Members[2].Candidates = new List<char> { '8', '7', '6', '5' };
+      str8t.Members[3].Candidates = new List<char> { '6', '5', '8', '7' };
 
       var np = str8t.GetNakedPairs();
       Assert.AreEqual(4, np.Count);
@@ -101,8 +101,8 @@ namespace Str8tsSolverTest
       var board = new Board(_board);
       board.ReadBoard();
       var str8t = board.Str8ts[0];
-      str8t.Members[1].Candidates = new List<int> { '2', '3' };
-      str8t.Members[2].Candidates = new List<int> { '2', '3' };
+      str8t.Members[1].Candidates = new List<char> { '2', '3' };
+      str8t.Members[2].Candidates = new List<char> { '2', '3' };
 
       var result = str8t.CertainCellsBySize();
       Assert.AreEqual(3, result.Count);
@@ -132,9 +132,9 @@ namespace Str8tsSolverTest
       var board = new Board(_board);
       board.ReadBoard();
       var str8t = board.Str8ts[2];
-      str8t.Members[0].Candidates = new List<int> { '1', '3', '4' };
-      str8t.Members[1].Candidates = new List<int> { '1', '3', '4' };
-      str8t.Members[2].Candidates = new List<int> { '1', '3', '4' };
+      str8t.Members[0].Candidates = new List<char> { '1', '3', '4' };
+      str8t.Members[1].Candidates = new List<char> { '1', '3', '4' };
+      str8t.Members[2].Candidates = new List<char> { '1', '3', '4' };
 
       var result = str8t.CertainCellsBySize();
 

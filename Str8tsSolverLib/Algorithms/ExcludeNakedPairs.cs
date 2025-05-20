@@ -40,11 +40,11 @@
         if (candidates.Count > 0)
         {
           // list of candidates per cell
-          List<int>[] candidates4Cells = new List<int>[cnt];
+          List<char>[] candidates4Cells = new List<char>[cnt];
           int idxOfCell = 0;
           for (int i = 0; i < cnt; i++)
           {
-            candidates4Cells[i] = new List<int>();
+            candidates4Cells[i] = new List<char>();
             candidates.ForEach(o => candidates4Cells[i].Add(o[i]));
             str8t.Members[i].Candidates = candidates4Cells[i];
             var emptyCells = str8t.Cells;

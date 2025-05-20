@@ -48,6 +48,27 @@ namespace Str8tsSolverLib
       }
       return false;
     }
+  
+    public List<char> GetCertainCandidatesFromSize()
+    {
+      if (NoOfBlackCells == 1 && NoOfStr8ts == 2)
+      {
+        if (Str8ts[0].Len == 2 || Str8ts[0].Len == 6)
+          return new List<char> { '2', '4', '5', '6', '8' };
+        if (Str8ts[0].Len == 3 || Str8ts[0].Len == 5)
+          return new List<char> { '2', '3', '5', '7', '8' };
+        if (Str8ts[0].Len == 4) // || Str8ts[0].Len == 4)
+          return new List<char> { '2', '3', '4', '6', '7', '8' };
+      }
+      if (NoOfBlackCells == 2 && NoOfStr8ts == 3)
+        return new List<char> { '1', '2', '5', '8', '7', '9' };
+
+      // todo : 3 black cells and 2 rows
+      return new List<char>();
+    }
+
+    public int NoOfBlackCells => _cells.Count(c => c.IsBlack);
+    public int NoOfStr8ts => _str8ts.Count;
   }
 
   public class HRow : Row
@@ -82,6 +103,7 @@ namespace Str8tsSolverLib
         _cells[i] = b._grid[i, Col];
       }
     }
+
     public override string ToString() => $"VRow {Idx}; {string.Join(";",Str8ts)}";
   }
 }

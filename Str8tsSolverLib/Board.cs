@@ -52,6 +52,40 @@ namespace Str8tsSolverLib
       return clone;
     }
 
+    private Cell[,] CloneGrid()
+    {
+      var grid = new Cell[9, 9];
+      for (int x = 0; x < 9; x++)
+      {
+        for (int y = 0; y < 9; y++)
+        {
+          grid[x, y] = _grid[x, y].Clone();
+        }
+      }
+      return grid;
+    }
+
+    public Cell[,] IsolateSureCandidates(bool columns)
+    {
+      var grid = CloneGrid();
+      var dict = new Dictionary<int, List<char>>();
+      for (int i = 0; i < 9; i++)
+      {
+        var row = Rows.Find(r => r.IsVertical && r.Idx == i);
+        var certainCandidates = row.Str8ts.SelectMany (s=>s.CertainCells()).ToList();
+
+        certainCandidates.AddRange (row.GetCertainCandidatesFromSize());
+        var cc = certainCandidates.Distinct();
+
+        for (int r = 0; r < 9; r++)
+        {
+          grid[r, i].Candidates.RemoveAll(c => !cc.Contains((char)c));
+        }
+      }
+
+      return grid;
+    }
+
     public List<Str8t> ReadHorizontalStr8ts(char[,] board) =>
       ReadStr8ts(board, (x, y) => board[x, y], (x, y) => new HStr8t(x, y, this));
 
@@ -204,26 +238,31 @@ namespace Str8tsSolverLib
 
     public bool IsSolved => Str8ts.All(s => s.IsSolved());
 
-    public void PrintBoard()
-    {
-      if (TxtOut == null)
-        return;
+    //public void PrintBoard()
+    //{
+    //  if (TxtOut == null)
+    //    return;
 
-      for (int x = 0; x < 9; x++)
-      {
-        for (int y = 0; y < 9; y++)
-        {
-          char c = _board[x, y] == ' ' ? '.' : _board[x, y];
-          TxtOut.Write(c);
-        }
+    //  for (int x = 0; x < 9; x++)
+    //  {
+    //    for (int y = 0; y < 9; y++)
+    //    {
+    //      char c = _board[x, y] == ' ' ? '.' : _board[x, y];
+    //      TxtOut.Write(c);
+    //    }
 
-        TxtOut.WriteLine();
-      }
+    //    TxtOut.WriteLine();
+    //  }
 
-      TxtOut.WriteLine();
-    }
+    //  TxtOut.WriteLine();
+    //}
 
     public void PrintBoard(bool big = true)
+    {
+      PrintBoard(_grid);
+    }
+
+    public void PrintBoard(Cell[,] grid)
     {
       if (TxtOut == null)
         return;
@@ -236,8 +275,8 @@ namespace Str8tsSolverLib
           TxtOut.Write('|');
           for (int y = 0; y < 9; y++)
           {
-            var c = _grid[x, y].Presentation;
-            if (_grid[x, y].IsBlack)
+            var c = grid[x, y].Presentation;
+            if (grid[x, y].IsBlack)
             {
               TxtOut.SetColors(Color.Black, Color.White);
               //Console.ForegroundColor = ConsoleColor.Black;
@@ -265,6 +304,16 @@ namespace Str8tsSolverLib
 
       TxtOut.WriteLine(" ----- ----- ----- ----- ----- ----- ----- ----- ----- ");
       TxtOut.WriteLine();
+    }
+
+    // for unit tests only
+    public void AssignCandidates(int r, int c, List<int> candidates)
+    {
+      if (candidates.Count == 0)
+        return;
+      var cell = _grid[r, c];
+      cell.Candidates.Clear();
+      cell.Candidates.AddRange(candidates.Select(c=>(char)c));
     }
 
     public bool Finish()
