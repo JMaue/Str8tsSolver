@@ -86,7 +86,7 @@ for ($d = 0; $d -lt 30; $d++) {
     $currentDate = $startDate.AddDays(-$d)
     $dateStr = $currentDate.ToString("yyyy-MM-dd")
     Write-Output $dateStr
-    & $chromePath --headless --dump-dom "$baseUrl`?d=$i" | echo > "$outputBasePath\$dateStr.txt"
+    & $chromePath --headless --dump-dom "$baseUrl`?d=$d" | echo > "$outputBasePath\$dateStr.txt"
  
     $board = Get-Str8tsBoard -FilePath "$outputBasePath\$dateStr.txt"
 
