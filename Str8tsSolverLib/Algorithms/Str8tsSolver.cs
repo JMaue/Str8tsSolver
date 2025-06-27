@@ -56,7 +56,7 @@ namespace Str8tsSolverLib
       do
       {
         progress = false;
-        var alg = iterations == 0 ? algorithms[0] :  iterations % 2 != 0 ? algorithms[1] : algorithms[1];
+        var alg = iterations == 0 ? algorithms[0] : algorithms[1];
         //foreach (var alg in algorithms)
         {
           var sortedStr8ts = board.Str8ts.OrderBy(s => s.Len).ToList();
